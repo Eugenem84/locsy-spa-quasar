@@ -6,8 +6,11 @@
       style="width: 200px; height: 200px"
     >
   </q-page>
+
+  <map-view />
+
 </template>
 
 <script setup>
-//
+import MapView from "components/MapView.vue";
 </script>
