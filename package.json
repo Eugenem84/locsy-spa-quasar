@@ -17,6 +17,7 @@
   "dependencies": {
     "@quasar/extras": "^1.16.4",
     "@vue-leaflet/vue-leaflet": "^0.10.1",
+    "@yandex/ymaps3-default-ui-theme": "^0.0.19",
     "axios": "^1.2.1",
     "leaflet": "^1.9.4",
     "pinia": "^3.0.1",

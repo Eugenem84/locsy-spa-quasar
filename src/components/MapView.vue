@@ -32,9 +32,10 @@
 
 <template>
   <LMap
-    style="height: 100vh; width: 100%;"
+    style="height: 1024px; width: 1024px;"
     :zoom="13"
     :center="mapCenter"
+    :attribution-control="false"
     @update:bounds="onBoundsChange"
   >
 
@@ -46,7 +47,7 @@
       v-for="location in locations"
       :key="location.id"
       :lat-lng="[location.lat, location.lng]"
-      :mouseover="hoverLocation = location"
+      :mouseover="hoverLocation = location.name"
       @click="openLocationModal(location)"
     />
   </LMap>
@@ -63,5 +64,9 @@
 </template>
 
 <style scoped>
+
+::v-deep .leaflet-control-attribution {
+  display: none !important;
+}
 
 </style>

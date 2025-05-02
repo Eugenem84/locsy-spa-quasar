@@ -7,12 +7,12 @@
 <!--    >-->
 <!--  </q-page>-->
 
-<!--  <map-view />-->
-  <yandex-map-view />
+  <map-view />
+<!--  <yandex-map-view />-->
 
 </template>
 
 <script setup>
-//import MapView from "components/MapView.vue";
-import YandexMapView from 'components/YandexMapView.vue'
+import MapView from "components/MapView.vue";
+//import YandexMapView from 'components/YandexMapView.vue'
 </script>
