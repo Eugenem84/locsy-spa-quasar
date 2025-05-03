@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+    <q-header elevated >
       <q-toolbar>
         <q-btn
           flat
@@ -12,16 +12,30 @@
         />
 
         <q-toolbar-title>
-          Quasar App
+          LOCSI
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <div class="q-pa-md">
+          <q-select
+            filled
+            style="width: 300px"
+            v-model="cityStore.selectedCity"
+            :options="cityStore.cities"
+            label="Выберите город"
+            use-input
+            dense
+            input-debounce="300"
+            clearable
+          />
+        </div>
+
+        <div>EserName</div>
       </q-toolbar>
     </q-header>
 
     <q-drawer
       v-model="leftDrawerOpen"
-      show-if-above
+      overlay
       bordered
     >
       <q-list>
@@ -39,7 +53,7 @@
       </q-list>
     </q-drawer>
 
-    <q-page-container>
+    <q-page-container @click="leftDrawerOpen = false">
       <router-view />
     </q-page-container>
   </q-layout>
@@ -48,6 +62,10 @@
 <script setup>
 import { ref } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
+import { useCityStore} from "stores/city.js";
+
+const cityStore = useCityStore()
+console.log('selectedCity: ' ,cityStore.selectedCity)
 
 const linksList = [
   {

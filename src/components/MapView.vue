@@ -8,8 +8,15 @@
     LMarker,
     //LPopup
   } from '@vue-leaflet/vue-leaflet'
+  import {useCityStore} from "stores/city.js";
+  import { computed } from "vue";
 
-  const mapCenter = ref([55.751244, 37.618423])
+  const cityStore = useCityStore()
+
+  const mapCenter = computed(() => cityStore.selectedCity.coords)
+
+  console.log('selectedCityCoords: ', cityStore.selectedCity.coords)
+
   const locations = ref([
     {id: 1, name: 'Парк Горького', lat: 55.729876, lng: 37.603493, rating: 4.7},
     {id: 2, name: 'ВДНХ', lat: 55.829895, lng: 37.633266, rating: 4.6},
@@ -32,8 +39,8 @@
 
 <template>
   <LMap
-    style="height: 1024px; width: 1024px;"
-    :zoom="13"
+    style="height: 92vh; width: 100%;"
+    :zoom="12"
     :center="mapCenter"
     :attribution-control="false"
     @update:bounds="onBoundsChange"
