@@ -1,9 +1,17 @@
+import LocationPage from "pages/LocationPage.vue";
+
 const routes = [
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/IndexPage.vue') }
+      { path: '', component: () => import('pages/IndexPage.vue') },
+      {
+        path: '/location/:id',
+        name: 'Location',
+        component: LocationPage,
+        props: true
+      }
     ]
   },
 

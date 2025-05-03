@@ -10,6 +10,9 @@
   } from '@vue-leaflet/vue-leaflet'
   import {useCityStore} from "stores/city.js";
   import { computed } from "vue";
+  import { useRouter } from "vue-router";
+
+  const router = useRouter()
 
   const cityStore = useCityStore()
 
@@ -29,10 +32,17 @@
   function openLocationModal(loc) {
     selectedLocation.value = loc
     modalOpen.value = true
+    //router.push({name: 'Location', params: { id: loc.id}})
   }
 
   function onBoundsChange(bounds) {
     console.log("карта обновлена", bounds)
+  }
+
+  function goToLocation(){
+    if (selectedLocation.value?.id) {
+      router.push({name: 'Location', params: { id: selectedLocation.value.id}})
+    }
   }
 
 </script>
@@ -59,14 +69,27 @@
     />
   </LMap>
 
-  <q-dialog v-model="modalOpen" persistent>
-    <q-card style="min-width: 90vw; min-height: 90vh">
-      <q-card-section>
-        <div class="text-h6">{{ selectedLocation?.name }}</div>
+  <!-- Обертка для центрирования -->
+  <div class="location-bottom-sheet-wrapper">
+    <q-card v-if="modalOpen"
+            class="location-bottom-sheet"
+            @click="goToLocation"
+    >
+      <!-- Кнопка закрытия -->
+      <q-btn
+        flat
+        dense
+        icon="close"
+        @click.stop="modalOpen = false"
+        class="absolute-top-right q-ma-sm z-top"
+      />
 
+      <q-card-section class="text-center">
+        <div class="text-h6">{{ selectedLocation?.name }}</div>
       </q-card-section>
     </q-card>
-  </q-dialog>
+  </div>
+
 
 </template>
 
@@ -76,4 +99,26 @@
   display: none !important;
 }
 
+.location-bottom-sheet-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* чтобы клики проходили сквозь обертку */
+}
+
+.location-bottom-sheet {
+  pointer-events: all; /* чтобы клики работали по карточке */
+  width: 95%;
+  min-height: 40vh;
+  margin-bottom: 5%;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  background: white;
+  z-index: 999;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
 </style>
