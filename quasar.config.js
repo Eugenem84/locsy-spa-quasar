@@ -14,6 +14,7 @@ export default defineConfig((/* ctx */) => {
     boot: [
       'axios',
       'yandex-maps',
+      'msw',
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css

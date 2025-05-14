@@ -1,5 +1,5 @@
 <script setup>
-  import {ref} from 'vue'
+import { onMounted, ref } from 'vue'
   import 'leaflet/dist/leaflet.css'
   import 'leaflet/dist/leaflet.js'
   import {
@@ -11,6 +11,7 @@
   import {useCityStore} from "stores/city.js";
   import { computed } from "vue";
   import { useRouter } from "vue-router";
+import { api } from 'boot/axios.js'
 
   const router = useRouter()
 
@@ -20,10 +21,7 @@
 
   console.log('selectedCityCoords: ', cityStore.selectedCity.coords)
 
-  const locations = ref([
-    {id: 1, name: 'Парк Горького', lat: 55.729876, lng: 37.603493, rating: 4.7},
-    {id: 2, name: 'ВДНХ', lat: 55.829895, lng: 37.633266, rating: 4.6},
-  ])
+  const locations = ref([])
 
   const hoverLocation = ref(null)
   const modalOpen = ref(false)
@@ -44,6 +42,20 @@
       router.push({name: 'Location', params: { id: selectedLocation.value.id}})
     }
   }
+
+  async function getLocations() {
+    console.log('получаем локации...')
+    try {
+      const {data} = await api.get('/locations')
+      locations.value = data
+    } catch (err) {
+      console.error('error load locations', err)
+    }
+  }
+
+  onMounted(
+    getLocations
+  )
 
 </script>
 
