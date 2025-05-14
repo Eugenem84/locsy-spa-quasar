@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+  import { onMounted, ref } from 'vue'
   import 'leaflet/dist/leaflet.css'
   import 'leaflet/dist/leaflet.js'
   import {
@@ -11,7 +11,8 @@ import { onMounted, ref } from 'vue'
   import {useCityStore} from "stores/city.js";
   import { computed } from "vue";
   import { useRouter } from "vue-router";
-import { api } from 'boot/axios.js'
+  import { api } from 'boot/axios.js'
+  import { watch } from 'vue'
 
   const router = useRouter()
 
@@ -26,6 +27,15 @@ import { api } from 'boot/axios.js'
   const hoverLocation = ref(null)
   const modalOpen = ref(false)
   const selectedLocation = ref(null)
+
+  watch(
+    () => cityStore.selectedCity.id,
+    (newId, oldId) => {
+      if (newId && newId !== oldId) {
+        getLocations()
+      }
+    }
+  )
 
   function openLocationModal(loc) {
     selectedLocation.value = loc
@@ -46,7 +56,9 @@ import { api } from 'boot/axios.js'
   async function getLocations() {
     console.log('получаем локации...')
     try {
-      const {data} = await api.get('/locations')
+      const {data} = await api.get('/locations', {
+        params: {city_id: cityStore.selectedCity.id}
+      })
       locations.value = data
     } catch (err) {
       console.error('error load locations', err)
