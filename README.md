@@ -1,40 +1,38 @@
-# Locsy (locsy)
+# Locsy - Frontend (Quasar SSR)
 
-A Quasar Project
+> Фронтенд-приложение для сервиса по поиску фотолокаций Locsy.
 
-## Install the dependencies
-```bash
-yarn
-# or
-npm install
-```
+## Стек технологий
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
-```bash
-quasar dev
-```
+*   **Framework:** Vue 3 / Quasar
+*   **Рендеринг:** SSR (Server-Side Rendering) для SEO
+*   **Управление состоянием:** Pinia
+*   **Маршрутизация:** Vue Router
+*   **Карты:** Leaflet
+*   **HTTP-клиент:** Axios
 
+## Архитектура
 
-### Lint the files
-```bash
-yarn lint
-# or
-npm run lint
-```
+Это фронтенд-приложение, которое рендерится на стороне сервера (Node.js). Оно получает данные от бэкенда на Laravel (`locsy-backend`) и отображает их пользователю.
 
+Приложение состоит из:
+*   Карты с маркерами локаций.
+*   Списка локаций.
+*   Детальной страницы для каждой локации.
 
-### Format the files
-```bash
-yarn format
-# or
-npm run format
-```
+## Как запустить для разработки
 
+1.  **Установить зависимости:** `npm install`
+2.  **Запустить dev-сервер:** `quasar dev -m ssr`
 
-### Build the app for production
-```bash
-quasar build
-```
+После этого сайт будет доступен по адресу `http://localhost:9000` (или другому порту, указанному в консоли).
 
-### Customize the configuration
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
+**Важно:** Для корректной работы требуется запущенный бэкенд (`locsy-backend`), который должен быть доступен по адресу, указанному в `.env` файле (`API_BASE_URL`).
+
+## Взаимодействие с API
+
+Приложение ожидает, что бэкенд предоставляет следующие эндпоинты:
+
+*   `GET /api/cities` - Получить список городов.
+*   `GET /api/locations?city_id={id}` - Получить локации для города.
+*   `GET /api/locations/{id}` - Получить детальную информацию о локации.

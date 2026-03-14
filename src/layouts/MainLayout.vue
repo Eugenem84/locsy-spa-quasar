@@ -26,6 +26,8 @@
             dense
             input-debounce="300"
             clearable
+            label-color="gray"
+            input-style="color: white"
           />
         </div>
 
@@ -118,3 +120,7 @@ function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 </script>
+
+<style>
+
+</style>

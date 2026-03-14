@@ -18,9 +18,8 @@ onMounted(async () => {
 <template>
 
   <q-page class="q-pa-md">
-    <h4> локация #{{id}}</h4>
     <div v-if="location">
-      <p><strong>Название: </strong> {{location.data.name }}</p>
+      <h4> {{location.data.name}}</h4>
       <p><strong>Описание: </strong> {{location.data.description}}</p>
     </div>
     <div v-else>

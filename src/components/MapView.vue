@@ -1,73 +1,52 @@
 <script setup>
-  import { onMounted, ref } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import 'leaflet/dist/leaflet.css'
   import 'leaflet/dist/leaflet.js'
   import {
     LMap,
     LTileLayer,
     LMarker,
-    //LPopup
+    LTooltip,
   } from '@vue-leaflet/vue-leaflet'
-  import {useCityStore} from "stores/city.js";
-  import { computed } from "vue";
+  import { useCityStore } from "stores/city.js";
+  import { useLocationStore } from "stores/location.js";
   import { useRouter } from "vue-router";
-  import { api } from 'boot/axios.js'
-  import { watch } from 'vue'
 
-  const router = useRouter()
+  const router = useRouter();
+  const cityStore = useCityStore();
+  const locationStore = useLocationStore();
 
-  const cityStore = useCityStore()
+  const mapCenter = computed(() => cityStore.selectedCity?.coords || [0, 0]);
+  const locations = computed(() => locationStore.locations);
+  const selectedLocation = computed(() => locationStore.selectedLocation);
 
-  const mapCenter = computed(() => cityStore.selectedCity.coords)
-
-  console.log('selectedCityCoords: ', cityStore.selectedCity.coords)
-
-  const locations = ref([])
-
-  const hoverLocation = ref(null)
-  const modalOpen = ref(false)
-  const selectedLocation = ref(null)
+  const modalOpen = ref(false);
 
   watch(
-    () => cityStore.selectedCity.id,
-    (newId, oldId) => {
-      if (newId && newId !== oldId) {
-        getLocations()
-      }
-    }
-  )
+    () => cityStore.selectedCity?.id,
+    (newId) => {
+      locationStore.fetchLocations(newId);
+    },
+    { immediate: true }
+  );
+
+  watch(selectedLocation, (newVal) => {
+    modalOpen.value = !!newVal;
+  });
 
   function openLocationModal(loc) {
-    selectedLocation.value = loc
-    modalOpen.value = true
-    //router.push({name: 'Location', params: { id: loc.id}})
+    locationStore.selectLocation(loc);
   }
 
-  function onBoundsChange(bounds) {
-    console.log("карта обновлена", bounds)
+  function closeModal() {
+    locationStore.selectLocation(null);
   }
 
-  function goToLocation(){
+  function goToLocation() {
     if (selectedLocation.value?.id) {
-      router.push({name: 'Location', params: { id: selectedLocation.value.id}})
+      router.push({ name: 'Location', params: { id: selectedLocation.value.id } });
     }
   }
-
-  async function getLocations() {
-    console.log('получаем локации...')
-    try {
-      const {data} = await api.get('/locations', {
-        params: {city_id: cityStore.selectedCity.id}
-      })
-      locations.value = data
-    } catch (err) {
-      console.error('error load locations', err)
-    }
-  }
-
-  onMounted(
-    getLocations
-  )
 
 </script>
 
@@ -77,7 +56,6 @@
     :zoom="12"
     :center="mapCenter"
     :attribution-control="false"
-    @update:bounds="onBoundsChange"
   >
 
     <LTileLayer
@@ -87,10 +65,18 @@
     <LMarker
       v-for="location in locations"
       :key="location.id"
-      :lat-lng="[location.lat, location.lng]"
-      :mouseover="hoverLocation = location.name"
+      :lat-lng="[location.latitude, location.longitude]"
       @click="openLocationModal(location)"
-    />
+    >
+      <LTooltip
+        :permanent="true"
+        :interactive="false"
+        direction="top"
+        offset="[0, -10]"
+      >
+        {{ location.name }}
+      </LTooltip>
+    </LMarker>
   </LMap>
 
   <!-- Обертка для центрирования -->
@@ -104,16 +90,16 @@
         flat
         dense
         icon="close"
-        @click.stop="modalOpen = false"
+        @click.stop="closeModal"
         class="absolute-top-right q-ma-sm z-top"
       />
 
       <q-card-section class="text-center">
         <div class="text-h6">{{ selectedLocation?.name }}</div>
+        <div class="text-grey-14">{{ selectedLocation?.description}}</div>
       </q-card-section>
     </q-card>
   </div>
-
 
 </template>
 
