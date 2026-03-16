@@ -44,9 +44,9 @@ onMounted(async () => {
         <h4 class="text-h4 text-weight-bold q-mb-sm">{{ location.name }}</h4>
       </div>
 
-      <!-- Горизонтальная галерея -->
-      <q-scroll-area horizontal style="height: 250px; width: 100%;">
-        <div class="row no-wrap q-gutter-md q-pa-md">
+      <!-- Сетка фотографий (70% высоты страницы) -->
+      <q-scroll-area :style="{ height: '70vh' }" class="q-mb-md">
+        <div class="photo-grid q-pa-md">
           <div
             v-for="(photoUrl, index) in photoGallery"
             :key="index"
@@ -57,7 +57,7 @@ onMounted(async () => {
               :ratio="4/3"
               spinner-color="grey-5"
               class="rounded-borders"
-              style="width: 300px; height: 225px;"
+
             />
           </div>
         </div>
@@ -88,5 +88,27 @@ onMounted(async () => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.photo-card {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.photo-card:hover {
+  transform: translateY(-4px);
+}
+
+.photo-card .q-img {
+  width: 100%;
+  height: auto;
 }
 </style>
