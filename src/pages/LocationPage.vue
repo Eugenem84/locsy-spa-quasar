@@ -8,14 +8,12 @@ const id = route.params.id
 const location = ref(null)
 const loading = ref(true)
 
-// Галерея теперь будет использовать full_url из данных
+const slide = ref(0)
+const fullscreen = ref(false)
+
+// Галерея теперь будет использовать full_url и не будет иметь плейсхолдеров
 const photoGallery = computed(() => {
-  if (location.value?.photos && location.value.photos.length > 0) {
-    // Используем новое поле full_url
-    return location.value.photos.map(p => p.full_url);
-  }
-  // Плейсхолдеры, если фото все еще нет
-  return Array(5).fill('https://via.placeholder.com/600x400?text=Фото+локации');
+  return location.value?.photos?.map(p => p.full_url) || [];
 });
 
 onMounted(async () => {
@@ -29,6 +27,12 @@ onMounted(async () => {
     loading.value = false;
   }
 })
+
+function openGallery(index) {
+  if (photoGallery.value.length === 0) return;
+  slide.value = index;
+  fullscreen.value = true;
+}
 
 </script>
 
@@ -44,20 +48,20 @@ onMounted(async () => {
         <h4 class="text-h4 text-weight-bold q-mb-sm">{{ location.name }}</h4>
       </div>
 
-      <!-- Сетка фотографий (70% высоты страницы) -->
+      <!-- Сетка фотографий -->
       <q-scroll-area :style="{ height: '70vh' }" class="q-mb-md">
         <div class="photo-grid q-pa-md">
           <div
             v-for="(photoUrl, index) in photoGallery"
             :key="index"
             class="photo-card"
+            @click="openGallery(index)"
           >
             <q-img
               :src="photoUrl"
               :ratio="4/3"
               spinner-color="grey-5"
               class="rounded-borders"
-
             />
           </div>
         </div>
@@ -72,6 +76,50 @@ onMounted(async () => {
     <div v-if="!loading && !location" class="fullscreen row flex-center text-h6 text-grey">
       Не удалось загрузить информацию о локации.
     </div>
+
+    <!-- Полноэкранная карусель, которая создается только при необходимости -->
+    <template v-if="fullscreen">
+      <q-carousel
+        v-model="slide"
+        v-model:fullscreen="fullscreen"
+        swipeable
+        animated
+        navigation
+        arrows
+        control-color="white"
+        class="bg-black"
+      >
+        <q-carousel-slide
+          v-for="(photoUrl, index) in photoGallery"
+          :key="index"
+          :name="index"
+          class="flex flex-center no-padding"
+        >
+          <q-img
+            :src="photoUrl"
+            fit="contain"
+            spinner-color="white"
+            style="width: 100%; height: 100%;"
+          />
+        </q-carousel-slide>
+
+        <!-- Кнопка закрытия в полноэкранном режиме -->
+        <template v-slot:control>
+          <q-carousel-control
+            position="top-right"
+            :offset="[18, 18]"
+            class="text-white"
+          >
+            <q-btn
+              push round dense
+              icon="close"
+              @click="fullscreen = false"
+            />
+          </q-carousel-control>
+        </template>
+      </q-carousel>
+    </template>
+
   </q-page>
 </template>
 
@@ -88,19 +136,14 @@ onMounted(async () => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
-}
-
-.photo-card {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  transition: transform 0.2s ease;
 }
 
 .photo-card:hover {
