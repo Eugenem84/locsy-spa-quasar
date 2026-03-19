@@ -1,9 +1,10 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { api } from 'boot/axios.js'
 
 const route = useRoute()
+const router = useRouter()
 const id = route.params.id
 const location = ref(null)
 const loading = ref(true)
@@ -34,10 +35,18 @@ function openGallery(index) {
   fullscreen.value = true;
 }
 
+function goBack() {
+  router.back()
+}
+
 </script>
 
 <template>
   <q-page class="location-page">
+    <q-page-sticky position="top-left" :offset="[18, 18]" style="z-index: 10">
+      <q-btn round dense push icon="arrow_back" @click="goBack" color="white" text-color="primary"/>
+    </q-page-sticky>
+
     <div v-if="loading" class="fullscreen row flex-center">
       <q-spinner color="primary" size="3em" />
     </div>
