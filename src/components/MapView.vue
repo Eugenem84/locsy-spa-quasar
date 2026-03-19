@@ -95,7 +95,24 @@
       />
 
       <q-card-section class="text-center">
-        <div class="text-h6">{{ selectedLocation?.name }}</div>
+        <div class="text-h6 q-mb-sm">{{ selectedLocation?.name }}</div>
+
+        <q-scroll-area
+          horizontal
+          style="height: 200px; max-width: 100%;"
+          class="q-mb-md"
+        >
+          <div class="row no-wrap">
+            <div v-for="photo in selectedLocation?.photos" :key="photo.id" class="q-mr-md">
+              <q-img
+                :src="photo.full_url"
+                style="width: 300px; height: 200px; border-radius: 10px;"
+                fit="cover"
+              />
+            </div>
+          </div>
+        </q-scroll-area>
+
         <div class="text-grey-14">{{ selectedLocation?.description}}</div>
       </q-card-section>
     </q-card>
