@@ -11,6 +11,7 @@ const loading = ref(true)
 
 const slide = ref(0)
 const fullscreen = ref(false)
+const isFavorite = ref(false)
 
 // Галерея теперь будет использовать full_url и не будет иметь плейсхолдеров
 const photoGallery = computed(() => {
@@ -39,12 +40,20 @@ function goBack() {
   router.back()
 }
 
+function toggleFavorite() {
+  isFavorite.value = !isFavorite.value
+}
+
 </script>
 
 <template>
   <q-page class="location-page">
     <q-page-sticky position="top-left" :offset="[18, 18]" style="z-index: 10">
       <q-btn round dense push icon="arrow_back" @click="goBack" color="white" text-color="primary"/>
+    </q-page-sticky>
+
+    <q-page-sticky position="top-right" :offset="[18, 18]" style="z-index: 10">
+      <q-btn round dense push :icon="isFavorite ? 'favorite' : 'favorite_border'" @click="toggleFavorite" color="white" text-color="blue"/>
     </q-page-sticky>
 
     <div v-if="loading" class="fullscreen row flex-center">
