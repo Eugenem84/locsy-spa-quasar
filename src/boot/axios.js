@@ -1,25 +1,34 @@
 import { defineBoot } from '#q-app/wrappers'
 import axios from 'axios'
 
-// Be careful when using SSR for cross-request state pollution
-// due to creating a Singleton instance here;
-// If any client changes this (global) instance, it might be a
-// good idea to move this instance creation inside of the
-// "export default () => {}" function below (which runs individually
-// for each client)
+// Create a configured instance of Axios
 const api = axios.create({
-  baseURL: process.env.DEV ? 'http://localhost:8000' : 'https://api.example.com'
-})
+  baseURL: process.env.DEV ? 'http://localhost:8000' : 'https://api.example.com',
+  withCredentials: true, // This is still crucial
+});
+
+// Add a request interceptor to manually set the X-XSRF-TOKEN header
+api.interceptors.request.use(config => {
+  // Try to get the cookie. The value is URI-encoded and needs to be decoded.
+  const token = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('XSRF-TOKEN='))
+    ?.split('=')[1];
+
+  if (token) {
+    config.headers['X-XSRF-TOKEN'] = decodeURIComponent(token);
+  }
+
+  return config;
+}, error => {
+  return Promise.reject(error);
+});
+
+
 export default defineBoot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
-
   app.config.globalProperties.$axios = axios
-  // ^ ^ ^ this will allow you to use this.$axios (for Vue Options API form)
-  //       so you won't necessarily have to import axios in each vue file
-
   app.config.globalProperties.$api = api
-  // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
-  //       so you can easily perform requests against your app's API
 })
 
 export { api }
