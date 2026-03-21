@@ -2,9 +2,11 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from 'boot/axios.js'
+import { useAuthStore } from 'stores/auth-store'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const id = route.params.id
 const location = ref(null)
 const loading = ref(true)
@@ -13,7 +15,6 @@ const slide = ref(0)
 const fullscreen = ref(false)
 const isFavorite = ref(false)
 
-// Галерея теперь будет использовать full_url и не будет иметь плейсхолдеров
 const photoGallery = computed(() => {
   return location.value?.photos?.map(p => p.full_url) || [];
 });
@@ -23,12 +24,43 @@ onMounted(async () => {
   try {
     const response = await api.get(`/api/location/${id}`)
     location.value = response.data
+    if (authStore.isLoggedIn) {
+      await checkFavoriteStatus()
+    }
   } catch (error) {
     console.error('Failed to fetch location:', error)
   } finally {
     loading.value = false;
   }
 })
+
+async function checkFavoriteStatus() {
+  try {
+    const response = await api.get('/api/favorites')
+    const favorites = response.data
+    isFavorite.value = favorites.some(fav => fav.id === location.value.id)
+  } catch (error) {
+    console.error('Failed to check favorite status:', error)
+  }
+}
+
+async function toggleFavorite() {
+  if (!authStore.isLoggedIn) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    if (isFavorite.value) {
+      await api.delete(`/api/locations/${location.value.id}/favorite`)
+    } else {
+      await api.post(`/api/locations/${location.value.id}/favorite`)
+    }
+    isFavorite.value = !isFavorite.value
+  } catch (error) {
+    console.error('Failed to toggle favorite:', error)
+  }
+}
 
 function openGallery(index) {
   if (photoGallery.value.length === 0) return;
@@ -39,11 +71,6 @@ function openGallery(index) {
 function goBack() {
   router.back()
 }
-
-function toggleFavorite() {
-  isFavorite.value = !isFavorite.value
-}
-
 </script>
 
 <template>

@@ -21,6 +21,12 @@ const routes = [
         path: '/login',
         name: 'Login',
         component: () => import('pages/LoginPage.vue')
+      },
+      {
+        path: '/favorites',
+        name: 'Favorites',
+        component: () => import('pages/FavoritesPage.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },

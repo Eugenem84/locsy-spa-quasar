@@ -35,7 +35,7 @@
         <div v-if="authStore.isLoggedIn" class="q-ml-md">
           <q-btn-dropdown flat :label="authStore.userName">
             <q-list>
-              <q-item clickable v-close-popup>
+              <q-item clickable v-close-popup to="/favorites">
                 <q-item-section>
                   <q-item-label>Избранное</q-item-label>
                 </q-item-section>

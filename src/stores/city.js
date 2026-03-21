@@ -11,7 +11,7 @@ export const useCityStore = defineStore('city', () => {
     try {
       const { data } = await api.get('/api/cities')
       cities.value = data.map(city => ({
-        id: city.id,
+        ...city,
         label: city.name,
         value: city.slug,
         coords: [city.latitude, city.longitude]
