@@ -42,6 +42,7 @@
 import { ref } from 'vue';
 import { api } from 'boot/axios';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from 'stores/auth-store';
 
 const form = ref({
   email: '',
@@ -50,33 +51,27 @@ const form = ref({
 
 const loading = ref(false);
 const router = useRouter();
+const authStore = useAuthStore();
 
 const handleLogin = async () => {
   loading.value = true;
   try {
-    // Ensure we have a CSRF cookie
     await api.get('/sanctum/csrf-cookie');
-
-    // Attempt to login
     await api.post('/login', form.value);
 
-    // Get the user data
-    const response = await api.get('/api/user');
-    console.log('User logged in:', response.data);
-
-    // TODO: Save user data in a store (e.g., Pinia)
+    // Fetch user data and save it in the store
+    await authStore.fetchUser();
 
     router.push('/');
 
   } catch (error) {
     let errorMessage = 'Login failed. Please check your credentials.';
-    if (error.response && error.response.data && error.response.data.errors) {
+    if (error.response?.data?.errors) {
       errorMessage = Object.values(error.response.data.errors).flat().join(' ');
-    } else if (error.response && error.response.data && error.response.data.message) {
+    } else if (error.response?.data?.message) {
       errorMessage = error.response.data.message;
     }
     console.error('Login Error:', errorMessage);
-    // Here you would use $q.notify, but we are using console.error for now
   } finally {
     loading.value = false;
   }

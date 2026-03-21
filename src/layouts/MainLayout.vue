@@ -12,7 +12,7 @@
         />
 
         <q-toolbar-title>
-          LOCSI
+          Locsy
         </q-toolbar-title>
 
         <div class="q-pa-md">
@@ -31,7 +31,29 @@
           />
         </div>
 
-        <div>EserName</div>
+        <!-- User Info Section -->
+        <div v-if="authStore.isLoggedIn" class="q-ml-md">
+          <q-btn-dropdown flat :label="authStore.userName">
+            <q-list>
+              <q-item clickable v-close-popup>
+                <q-item-section>
+                  <q-item-label>Избранное</q-item-label>
+                </q-item-section>
+              </q-item>
+
+              <q-item clickable v-close-popup @click="authStore.handleLogout">
+                <q-item-section>
+                  <q-item-label>Выход</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+        </div>
+        <div v-else class="q-ml-md">
+          <q-btn flat label="Войти" to="/login" class="q-mr-sm" />
+          <q-btn outline label="Регистрация" to="/register" />
+        </div>
+
       </q-toolbar>
     </q-header>
 
@@ -62,12 +84,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
 import { useCityStore} from "stores/city.js";
+import { useAuthStore } from "stores/auth-store";
 
 const cityStore = useCityStore()
-console.log('selectedCity: ' ,cityStore.selectedCity)
+const authStore = useAuthStore();
+
+// Try to fetch user on component mount to check for existing session
+onMounted(() => {
+  authStore.fetchUser();
+});
+
 
 const linksList = [
   {
