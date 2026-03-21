@@ -14,6 +14,7 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "stores/auth-store";
 import { api } from 'boot/axios.js'
 import L from 'leaflet';
+import { debounce } from 'quasar';
 
 const router = useRouter();
 const cityStore = useCityStore();
@@ -21,12 +22,26 @@ const locationStore = useLocationStore();
 const authStore = useAuthStore();
 
 const favorites = ref([]);
+const mapRef = ref(null); // Ref for the map instance
+const mapInstance = computed(() => mapRef.value?.leafletObject);
 
-const mapCenter = computed(() => cityStore.selectedCity?.coords || [0, 0]);
+const initialCenter = computed(() => cityStore.selectedCity?.coords || [55.751244, 37.618423]); // Default to Moscow
 const locations = computed(() => locationStore.locations);
 const selectedLocation = computed(() => locationStore.selectedLocation);
 
 const modalOpen = ref(false);
+
+const fetchLocations = debounce(async () => {
+  if (!mapInstance.value) return;
+
+  console.log('карта сдвинулась, запрашиваю новые локации...');
+
+  const bounds = mapInstance.value.getBounds();
+  console.log('Текущие границы карты (объект):', bounds); // <--- ДОБАВЛЕНО ДЛЯ ДЕТАЛЬНОЙ ДИАГНОСТИКИ
+
+  await locationStore.fetchLocationsByBounds(bounds);
+}, 300);
+
 
 async function fetchFavorites() {
   if (!authStore.isLoggedIn) return;
@@ -42,13 +57,12 @@ onMounted(() => {
   fetchFavorites();
 });
 
-watch(
-  () => cityStore.selectedCity?.id,
-  (newId) => {
-    locationStore.fetchLocations(newId);
-  },
-  { immediate: true }
-);
+// When the selected city changes, fly to its coordinates
+watch(() => cityStore.selectedCity, (newCity) => {
+  if (newCity && mapInstance.value) {
+    mapInstance.value.flyTo(newCity.coords, 12);
+  }
+});
 
 watch(selectedLocation, (newVal) => {
   modalOpen.value = !!newVal;
@@ -94,10 +108,13 @@ function getMarkerIcon(location) {
 
 <template>
   <LMap
+    ref="mapRef"
     style="height: 92vh; width: 100%;"
     :zoom="12"
-    :center="mapCenter"
+    :center="initialCenter"
     :attribution-control="false"
+    @ready="fetchLocations"
+    @moveend="fetchLocations"
   >
 
     <LTileLayer

@@ -23,9 +23,29 @@ export const useLocationStore = defineStore('location', () => {
     }
   }
 
+  async function fetchLocationsByBounds(bounds) {
+    try {
+      const params = {
+        sw_lat: bounds.getSouthWest().lat,
+        sw_lng: bounds.getSouthWest().lng,
+        ne_lat: bounds.getNorthEast().lat,
+        ne_lng: bounds.getNorthEast().lng,
+      };
+      console.log('Отправка запроса /api/locations/by-bounds с параметрами:', params); // <--- ДОБАВЛЕНО ДЛЯ ДИАГНОСТИКИ
+
+      const { data } = await api.get('/api/locations/by-bounds', { params });
+
+      console.log('Locations received from backend:', data);
+      locations.value = data;
+    } catch (error) {
+      console.error('Error fetching locations by bounds:', error);
+      locations.value = [];
+    }
+  }
+
   function selectLocation(location) {
     selectedLocation.value = location;
   }
 
-  return { locations, selectedLocation, fetchLocations, selectLocation };
+  return { locations, selectedLocation, fetchLocations, fetchLocationsByBounds, selectLocation };
 });
