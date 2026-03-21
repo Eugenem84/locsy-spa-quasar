@@ -1,14 +1,17 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { api } from 'boot/axios.js'
 import { useCityStore } from "stores/city.js";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "stores/auth-store";
 
 const cityStore = useCityStore()
 const router = useRouter()
+const authStore = useAuthStore()
 
 const locations = ref([])
 const loading = ref(false)
+const favorites = ref([])
 
 async function loadLocations(cityId) {
   if (!cityId) {
@@ -29,6 +32,20 @@ async function loadLocations(cityId) {
   }
 }
 
+async function fetchFavorites() {
+  if (!authStore.isLoggedIn) return;
+  try {
+    const response = await api.get('/api/favorites');
+    favorites.value = response.data.map(fav => fav.id);
+  } catch (error) {
+    console.error('Failed to fetch favorites:', error);
+  }
+}
+
+onMounted(() => {
+  fetchFavorites();
+});
+
 watch(
   () => cityStore.selectedCity?.id,
   (newId) => {
@@ -43,6 +60,29 @@ function selectLocation(location){
   }
 }
 
+function isFavorite(location) {
+  return favorites.value.includes(location.id);
+}
+
+async function toggleFavorite(location) {
+  if (!authStore.isLoggedIn) {
+    router.push('/login');
+    return;
+  }
+
+  const locationId = location.id;
+  try {
+    if (isFavorite(location)) {
+      await api.delete(`/api/locations/${locationId}/favorite`);
+      favorites.value = favorites.value.filter(id => id !== locationId);
+    } else {
+      await api.post(`/api/locations/${locationId}/favorite`);
+      favorites.value.push(locationId);
+    }
+  } catch (error) {
+    console.error('Failed to toggle favorite:', error);
+  }
+}
 </script>
 
 <template>
@@ -58,15 +98,23 @@ function selectLocation(location){
         class="my-card"
         flat
         bordered
-        @click="selectLocation(location)"
       >
-        <q-card-section>
+        <div class="absolute-top-right q-pa-xs" style="z-index: 1;">
+          <q-btn
+            flat
+            round
+            :icon="isFavorite(location) ? 'favorite' : 'favorite_border'"
+            color="blue"
+            @click.stop="toggleFavorite(location)"
+          />
+        </div>
+
+        <q-card-section @click="selectLocation(location)" class="cursor-pointer">
           <div class="text-h6 text-weight-medium">{{ location.name }}</div>
         </q-card-section>
 
-        <q-scroll-area horizontal style="height: 160px; width: 100%;">
+        <q-scroll-area horizontal style="height: 160px; width: 100%;" @click="selectLocation(location)" class="cursor-pointer">
           <div class="row no-wrap q-gutter-sm q-px-md">
-            <!-- Используем full_url из данных о фотографиях -->
             <q-img
               v-for="photo in location.photos"
               :key="photo.id"
@@ -75,7 +123,6 @@ function selectLocation(location){
               spinner-color="grey-5"
               style="width: 250px; height: 150px;"
             >
-              <!-- Плейсхолдер на случай, если у локации нет фото -->
               <template v-if="!location.photos || location.photos.length === 0">
                 <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
                   Нет фото
@@ -85,7 +132,7 @@ function selectLocation(location){
           </div>
         </q-scroll-area>
 
-        <q-card-section>
+        <q-card-section @click="selectLocation(location)" class="cursor-pointer">
           <p class="text-body2 text-grey-8 ellipsis-3-lines">
             {{ location.description || 'Нет описания.' }}
           </p>
@@ -106,7 +153,7 @@ function selectLocation(location){
 
 <style scoped>
 .my-card {
-  cursor: pointer;
+  position: relative;
   transition: box-shadow 0.2s ease-in-out;
 }
 

@@ -9,7 +9,7 @@ const loading = ref(true)
 const router = useRouter()
 const cityStore = useCityStore()
 
-onMounted(async () => {
+async function fetchFavorites() {
   try {
     const response = await api.get('/api/favorites')
     favorites.value = response.data
@@ -18,6 +18,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+}
+
+onMounted(() => {
+  fetchFavorites()
 })
 
 const filteredFavorites = computed(() => {
@@ -33,6 +37,16 @@ function goToLocation(id) {
 
 function goBack() {
   router.back()
+}
+
+async function removeFromFavorites(location) {
+  const locationId = location.id;
+  try {
+    await api.delete(`/api/locations/${locationId}/favorite`);
+    favorites.value = favorites.value.filter(fav => fav.id !== locationId);
+  } catch (error) {
+    console.error('Failed to remove favorite:', error);
+  }
 }
 </script>
 
@@ -58,29 +72,40 @@ function goBack() {
       <q-card
         v-for="location in filteredFavorites"
         :key="location.id"
-        @click="goToLocation(location.id)"
-        class="location-card cursor-pointer"
+        class="location-card"
       >
-        <q-img
-          :src="location.photos.length > 0 ? location.photos[0].full_url : 'https://via.placeholder.com/300'"
-          :ratio="4/3"
-          class="location-card-image"
-        >
-          <q-badge
-            v-if="location.city"
-            class="q-ma-sm"
-            color="white"
-            text-color="primary"
-            position="top-left"
-          >
-            {{ location.city.name }}
-          </q-badge>
-        </q-img>
+        <div class="absolute-top-right q-pa-xs" style="z-index: 1;">
+          <q-btn
+            flat
+            round
+            icon="favorite"
+            color="blue"
+            @click.stop="removeFromFavorites(location)"
+          />
+        </div>
 
-        <q-card-section>
-          <div class="text-h6 text-weight-bold">{{ location.name }}</div>
-          <div class="text-caption text-grey">{{ location.description.substring(0, 100) }}...</div>
-        </q-card-section>
+        <div @click="goToLocation(location.id)" class="cursor-pointer">
+          <q-img
+            :src="location.photos.length > 0 ? location.photos[0].full_url : 'https://via.placeholder.com/300'"
+            :ratio="4/3"
+            class="location-card-image"
+          >
+            <q-badge
+              v-if="location.city"
+              class="q-ma-sm"
+              color="white"
+              text-color="primary"
+              position="top-left"
+            >
+              {{ location.city.name }}
+            </q-badge>
+          </q-img>
+
+          <q-card-section>
+            <div class="text-h6 text-weight-bold">{{ location.name }}</div>
+            <div class="text-caption text-grey">{{ location.description.substring(0, 100) }}...</div>
+          </q-card-section>
+        </div>
       </q-card>
     </div>
   </q-page>
@@ -94,6 +119,7 @@ function goBack() {
 }
 
 .location-card {
+  position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 

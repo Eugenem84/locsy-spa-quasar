@@ -1,53 +1,95 @@
 <script setup>
-  import { ref, computed, watch } from 'vue'
-  import 'leaflet/dist/leaflet.css'
-  import 'leaflet/dist/leaflet.js'
-  import {
-    LMap,
-    LTileLayer,
-    LMarker,
-    LTooltip,
-  } from '@vue-leaflet/vue-leaflet'
-  import { useCityStore } from "stores/city.js";
-  import { useLocationStore } from "stores/location.js";
-  import { useRouter } from "vue-router";
+import { ref, computed, watch, onMounted } from 'vue'
+import 'leaflet/dist/leaflet.css'
+import 'leaflet/dist/leaflet.js'
+import {
+  LMap,
+  LTileLayer,
+  LMarker,
+  LTooltip,
+} from '@vue-leaflet/vue-leaflet'
+import { useCityStore } from "stores/city.js";
+import { useLocationStore } from "stores/location.js";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "stores/auth-store";
+import { api } from 'boot/axios.js'
+import L from 'leaflet';
 
-  const router = useRouter();
-  const cityStore = useCityStore();
-  const locationStore = useLocationStore();
+const router = useRouter();
+const cityStore = useCityStore();
+const locationStore = useLocationStore();
+const authStore = useAuthStore();
 
-  const mapCenter = computed(() => cityStore.selectedCity?.coords || [0, 0]);
-  const locations = computed(() => locationStore.locations);
-  const selectedLocation = computed(() => locationStore.selectedLocation);
+const favorites = ref([]);
 
-  const modalOpen = ref(false);
+const mapCenter = computed(() => cityStore.selectedCity?.coords || [0, 0]);
+const locations = computed(() => locationStore.locations);
+const selectedLocation = computed(() => locationStore.selectedLocation);
 
-  watch(
-    () => cityStore.selectedCity?.id,
-    (newId) => {
-      locationStore.fetchLocations(newId);
-    },
-    { immediate: true }
-  );
+const modalOpen = ref(false);
 
-  watch(selectedLocation, (newVal) => {
-    modalOpen.value = !!newVal;
-  });
-
-  function openLocationModal(loc) {
-    locationStore.selectLocation(loc);
+async function fetchFavorites() {
+  if (!authStore.isLoggedIn) return;
+  try {
+    const response = await api.get('/api/favorites');
+    favorites.value = response.data.map(fav => fav.id);
+  } catch (error) {
+    console.error('Failed to fetch favorites:', error);
   }
+}
 
-  function closeModal() {
-    locationStore.selectLocation(null);
+onMounted(() => {
+  fetchFavorites();
+});
+
+watch(
+  () => cityStore.selectedCity?.id,
+  (newId) => {
+    locationStore.fetchLocations(newId);
+  },
+  { immediate: true }
+);
+
+watch(selectedLocation, (newVal) => {
+  modalOpen.value = !!newVal;
+});
+
+function openLocationModal(loc) {
+  locationStore.selectLocation(loc);
+}
+
+function closeModal() {
+  locationStore.selectLocation(null);
+}
+
+function goToLocation() {
+  if (selectedLocation.value?.id) {
+    router.push({ name: 'Location', params: { id: selectedLocation.value.id } });
   }
+}
 
-  function goToLocation() {
-    if (selectedLocation.value?.id) {
-      router.push({ name: 'Location', params: { id: selectedLocation.value.id } });
-    }
-  }
+// Custom Icons
+const defaultIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
 
+const favoriteIcon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
+
+function getMarkerIcon(location) {
+  return favorites.value.includes(location.id) ? favoriteIcon : defaultIcon;
+}
 </script>
 
 <template>
@@ -66,6 +108,7 @@
       v-for="location in locations"
       :key="location.id"
       :lat-lng="[location.latitude, location.longitude]"
+      :icon="getMarkerIcon(location)"
       @click="openLocationModal(location)"
     >
       <LTooltip
