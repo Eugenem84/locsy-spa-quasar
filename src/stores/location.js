@@ -47,5 +47,19 @@ export const useLocationStore = defineStore('location', () => {
     selectedLocation.value = location;
   }
 
-  return { locations, selectedLocation, fetchLocations, fetchLocationsByBounds, selectLocation };
+  async function createLocation(formData) {
+    try {
+      const { data } = await api.post('/api/locations', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      // Add the new location to the list
+      locations.value.push(data);
+    } catch (error) {
+      console.error('Error creating location:', error);
+    }
+  }
+
+  return { locations, selectedLocation, fetchLocations, fetchLocationsByBounds, selectLocation, createLocation };
 });

@@ -40,7 +40,11 @@
                   <q-item-label>Избранное</q-item-label>
                 </q-item-section>
               </q-item>
-
+              <q-item clickable v-close-popup @click="openCreateLocationDialog">
+                <q-item-section>
+                  <q-item-label>Добавить локацию</q-item-label>
+                </q-item-section>
+              </q-item>
               <q-item clickable v-close-popup @click="authStore.handleLogout">
                 <q-item-section>
                   <q-item-label>Выход</q-item-label>
@@ -80,17 +84,27 @@
     <q-page-container @click="leftDrawerOpen = false">
       <router-view />
     </q-page-container>
+
+    <q-dialog v-model="createLocationDialogOpen">
+      <CreateLocationForm />
+    </q-dialog>
   </q-layout>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
+import CreateLocationForm from 'components/CreateLocationForm.vue'
 import { useCityStore} from "stores/city.js";
 import { useAuthStore } from "stores/auth-store";
 
 const cityStore = useCityStore()
 const authStore = useAuthStore();
+const createLocationDialogOpen = ref(false);
+
+function openCreateLocationDialog() {
+  createLocationDialogOpen.value = true;
+}
 
 // Try to fetch user on component mount to check for existing session
 onMounted(() => {
