@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet/dist/leaflet.js'
 import {
@@ -10,13 +10,15 @@ import {
 } from '@vue-leaflet/vue-leaflet'
 import { useCityStore } from "stores/city.js";
 import { useLocationStore } from "stores/location.js";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "stores/auth-store";
 import { api } from 'boot/axios.js'
 import L from 'leaflet';
 import { debounce } from 'quasar';
+import CreateLocationForm from "components/CreateLocationForm.vue";
 
 const router = useRouter();
+const route = useRoute();
 const cityStore = useCityStore();
 const locationStore = useLocationStore();
 const authStore = useAuthStore();
@@ -30,16 +32,28 @@ const locations = computed(() => locationStore.locations);
 const selectedLocation = computed(() => locationStore.selectedLocation);
 
 const modalOpen = ref(false);
+const createLocationDialogOpen = ref(false);
+const newLocationCoords = ref(null);
+
+const isPickingMode = computed(() => route.query.picking === 'true');
+
+watch(isPickingMode, (isPicking) => {
+  nextTick(() => {
+    const mapEl = mapRef.value?.leafletObject?._container;
+    if (mapEl) {
+      if (isPicking) {
+        mapEl.classList.add('picking-mode');
+      } else {
+        mapEl.classList.remove('picking-mode');
+      }
+    }
+  });
+});
+
 
 const fetchLocations = debounce(async () => {
   if (!mapInstance.value) return;
-
-  console.log('карта сдвинулась, запрашиваю новые локации...');
-
-  const bounds = mapInstance.value.getBounds();
-  console.log('Текущие границы карты (объект):', bounds); // <--- ДОБАВЛЕНО ДЛЯ ДЕТАЛЬНОЙ ДИАГНОСТИКИ
-
-  await locationStore.fetchLocationsByBounds(bounds);
+  await locationStore.fetchLocationsByBounds(mapInstance.value.getBounds());
 }, 300);
 
 
@@ -51,6 +65,24 @@ async function fetchFavorites() {
   } catch (error) {
     console.error('Failed to fetch favorites:', error);
   }
+}
+
+function handleMapClick(event) {
+  if (isPickingMode.value) {
+    newLocationCoords.value = event.latlng;
+    createLocationDialogOpen.value = true;
+  }
+}
+
+function onDialogHide() {
+  if (isPickingMode.value) {
+    router.push({ path: '/' });
+  }
+}
+
+function onLocationCreated() {
+  createLocationDialogOpen.value = false;
+  // The @hide event on q-dialog will handle the URL change.
 }
 
 onMounted(() => {
@@ -69,6 +101,8 @@ watch(selectedLocation, (newVal) => {
 });
 
 function openLocationModal(loc) {
+  // Prevent opening location details when in picking mode
+  if (isPickingMode.value) return;
   locationStore.selectLocation(loc);
 }
 
@@ -115,6 +149,7 @@ function getMarkerIcon(location) {
     :attribution-control="false"
     @ready="fetchLocations"
     @moveend="fetchLocations"
+    @click="handleMapClick"
   >
 
     <LTileLayer
@@ -126,7 +161,7 @@ function getMarkerIcon(location) {
       :key="location.id"
       :lat-lng="[location.latitude, location.longitude]"
       :icon="getMarkerIcon(location)"
-      @click="openLocationModal(location)"
+      @click.stop="openLocationModal(location)"
     >
       <LTooltip
         :permanent="true"
@@ -178,9 +213,21 @@ function getMarkerIcon(location) {
     </q-card>
   </div>
 
+  <q-dialog v-model="createLocationDialogOpen" @hide="onDialogHide">
+    <CreateLocationForm
+      v-if="newLocationCoords"
+      :latitude="newLocationCoords.lat"
+      :longitude="newLocationCoords.lng"
+      @location-created="onLocationCreated"
+    />
+  </q-dialog>
+
 </template>
 
 <style scoped>
+.picking-mode {
+  cursor: crosshair;
+}
 
 ::v-deep .leaflet-control-attribution {
   display: none !important;

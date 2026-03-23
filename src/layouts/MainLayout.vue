@@ -84,26 +84,23 @@
     <q-page-container @click="leftDrawerOpen = false">
       <router-view />
     </q-page-container>
-
-    <q-dialog v-model="createLocationDialogOpen">
-      <CreateLocationForm />
-    </q-dialog>
   </q-layout>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
-import CreateLocationForm from 'components/CreateLocationForm.vue'
 import { useCityStore} from "stores/city.js";
 import { useAuthStore } from "stores/auth-store";
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const cityStore = useCityStore()
 const authStore = useAuthStore();
-const createLocationDialogOpen = ref(false);
 
 function openCreateLocationDialog() {
-  createLocationDialogOpen.value = true;
+  console.log('MainLayout: Нажата кнопка "Добавить локацию", меняю URL на /?picking=true');
+  router.push({ path: '/', query: { picking: 'true' } });
 }
 
 // Try to fetch user on component mount to check for existing session

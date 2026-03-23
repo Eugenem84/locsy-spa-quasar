@@ -1,41 +1,50 @@
 <template>
-  <q-card>
+  <q-card style="width: 500px">
     <q-card-section>
-      <div class="text-h6">Create a new location</div>
+      <div class="text-h6">Добавить новую локацию</div>
     </q-card-section>
 
     <q-card-section>
-      <q-form @submit="onSubmit">
+      <q-form @submit.prevent="submitForm">
         <q-input
-          filled
           v-model="form.name"
-          label="Name"
-          lazy-rules
-          :rules="[ val => val && val.length > 0 || 'Please type something']"
+          label="Название"
+          filled
+          required
+          :error="!!errors.name"
+          :error-message="errors.name?.join(', ')"
         />
 
         <q-input
-          filled
           v-model="form.description"
-          label="Description"
+          label="Описание"
           type="textarea"
-          lazy-rules
-          :rules="[ val => val && val.length > 0 || 'Please type something']"
+          filled
+          required
+          class="q-mt-md"
+          :error="!!errors.description"
+          :error-message="errors.description?.join(', ')"
         />
 
         <q-file
           v-model="form.photos"
-          label="Photos"
+          label="Фотографии"
+          filled
           multiple
           accept="image/*"
-          @rejected="onRejected"
+          class="q-mt-md"
+          :error="!!errors.photos"
+          :error-message="errors.photos?.join(', ')"
         >
           <template v-slot:prepend>
             <q-icon name="attach_file" />
           </template>
         </q-file>
 
-        <q-btn label="Submit" type="submit" color="primary"/>
+        <q-card-actions align="right" class="q-mt-md">
+          <q-btn flat label="Отмена" v-close-popup />
+          <q-btn type="submit" label="Создать" color="primary" :loading="loading" />
+        </q-card-actions>
       </q-form>
     </q-card-section>
   </q-card>
@@ -43,37 +52,79 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useLocationStore } from 'stores/location';
+import { api } from 'boot/axios';
+import { useQuasar } from 'quasar';
+import { useLocationStore } from "stores/location";
 
+const props = defineProps({
+  latitude: {
+    type: Number,
+    required: true,
+  },
+  longitude: {
+    type: Number,
+    required: true,
+  },
+});
+
+const emit = defineEmits(['location-created']);
+
+const $q = useQuasar();
 const locationStore = useLocationStore();
 
 const form = ref({
   name: '',
   description: '',
-  latitude: 55.751244, // Hardcoded for now
-  longitude: 37.618423, // Hardcoded for now
-  city_id: 1, // Hardcoded for now
   photos: [],
 });
+const errors = ref({});
+const loading = ref(false);
 
-const onSubmit = async () => {
+async function submitForm() {
+  loading.value = true;
+  errors.value = {};
+
   const formData = new FormData();
   formData.append('name', form.value.name);
   formData.append('description', form.value.description);
-  formData.append('latitude', form.value.latitude);
-  formData.append('longitude', form.value.longitude);
-  formData.append('city_id', form.value.city_id);
+  formData.append('latitude', props.latitude);
+  formData.append('longitude', props.longitude);
 
-  for (const photo of form.value.photos) {
-    formData.append('photos[]', photo);
+  if (form.value.photos && form.value.photos.length > 0) {
+    for (const photo of form.value.photos) {
+      formData.append('photos[]', photo);
+    }
   }
 
-  await locationStore.createLocation(formData);
-};
+  try {
+    const response = await api.post('/api/locations', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
-const onRejected = (rejectedEntries) => {
-  // Notify the user that there was a problem with the file
-  // For example, using Quasar's Notify plugin
-  console.error('Rejected file:', rejectedEntries);
-};
+    locationStore.addLocation(response.data);
+
+    $q.notify({
+      color: 'positive',
+      message: 'Локация успешно создана!',
+      icon: 'check',
+    });
+
+    emit('location-created');
+
+  } catch (error) {
+    if (error.response && error.response.status === 422) {
+      errors.value = error.response.data.errors;
+    } else {
+      $q.notify({
+        color: 'negative',
+        message: 'Ошибка при создании локации. Пожалуйста, попробуйте еще раз.',
+        icon: 'report_problem',
+      });
+    }
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
