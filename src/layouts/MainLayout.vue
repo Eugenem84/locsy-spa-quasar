@@ -28,6 +28,7 @@
             clearable
             label-color="gray"
             input-style="color: white"
+            @filter="filterFn"
           />
         </div>
 
@@ -103,9 +104,16 @@ function openCreateLocationDialog() {
   router.push({ path: '/', query: { picking: 'true' } });
 }
 
+function filterFn (val, update) {
+  update(() => {
+    cityStore.fetchCities(val);
+  })
+}
+
 // Try to fetch user on component mount to check for existing session
 onMounted(() => {
   authStore.fetchUser();
+  cityStore.fetchCities();
 });
 
 
