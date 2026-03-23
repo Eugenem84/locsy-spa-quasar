@@ -31,11 +31,7 @@ export const useLocationStore = defineStore('location', () => {
         ne_lat: bounds.getNorthEast().lat,
         ne_lng: bounds.getNorthEast().lng,
       };
-      console.log('Отправка запроса /api/locations/by-bounds с параметрами:', params); // <--- ДОБАВЛЕНО ДЛЯ ДИАГНОСТИКИ
-
       const { data } = await api.get('/api/locations/by-bounds', { params });
-
-      console.log('Locations received from backend:', data);
       locations.value = data;
     } catch (error) {
       console.error('Error fetching locations by bounds:', error);
@@ -47,19 +43,25 @@ export const useLocationStore = defineStore('location', () => {
     selectedLocation.value = location;
   }
 
-  async function createLocation(formData) {
-    try {
-      const { data } = await api.post('/api/locations', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      // Add the new location to the list
-      locations.value.push(data);
-    } catch (error) {
-      console.error('Error creating location:', error);
-    }
+  // This function just adds a location to the local state
+  function addLocation(location) {
+    locations.value.unshift(location);
   }
 
-  return { locations, selectedLocation, fetchLocations, fetchLocationsByBounds, selectLocation, createLocation };
+  // This function handles the API call
+  async function createLocation(formData) {
+    // The 'try...catch' block is removed from here.
+    // The component that calls this action will be responsible for handling errors.
+    // This makes the store more reusable and predictable.
+    const { data } = await api.post('/api/locations', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    // On success, add the new location to the state and return it
+    addLocation(data);
+    return data;
+  }
+
+  return { locations, selectedLocation, fetchLocations, fetchLocationsByBounds, selectLocation, createLocation, addLocation };
 });

@@ -19,13 +19,26 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null;
   }
 
+  async function getCsrfCookie() {
+    // This action is crucial for Laravel Sanctum authentication.
+    // It fetches the CSRF token that Sanctum needs to verify subsequent requests.
+    try {
+      await api.get('/sanctum/csrf-cookie');
+    } catch (error) {
+      console.error('Failed to get CSRF cookie', error);
+    }
+  }
+
   async function fetchUser() {
+    // We must get the CSRF cookie before trying to fetch the user.
+    await getCsrfCookie();
     try {
       const { data } = await api.get('/api/user');
       setUser(data);
     } catch (error) {
+      console.error(error)
       clearUser();
-      console.error('Failed to fetch user', error);
+      // No need to log error here as it's expected if user is not logged in.
     }
   }
 
@@ -44,6 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
     userName,
     setUser,
     clearUser,
+    getCsrfCookie, // Exporting for potential use elsewhere
     fetchUser,
     handleLogout,
   };

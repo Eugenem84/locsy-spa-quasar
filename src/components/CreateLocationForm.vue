@@ -52,9 +52,9 @@
 
 <script setup>
 import { ref } from 'vue';
-import { api } from 'boot/axios';
-import { useQuasar } from 'quasar';
+import { useQuasar } from 'quasar'; // Возвращаем стандартный импорт
 import { useLocationStore } from "stores/location";
+import { useCityStore } from "stores/city";
 
 const props = defineProps({
   latitude: {
@@ -69,8 +69,9 @@ const props = defineProps({
 
 const emit = defineEmits(['location-created']);
 
-const $q = useQuasar();
+const $q = useQuasar(); // Возвращаем стандартное объявление
 const locationStore = useLocationStore();
+const cityStore = useCityStore();
 
 const form = ref({
   name: '',
@@ -81,6 +82,15 @@ const errors = ref({});
 const loading = ref(false);
 
 async function submitForm() {
+  if (!cityStore.selectedCity) {
+    $q.notify({ // Возвращаем $q.notify
+      color: 'negative',
+      message: 'Пожалуйста, выберите город перед созданием локации.',
+      icon: 'report_problem',
+    });
+    return;
+  }
+
   loading.value = true;
   errors.value = {};
 
@@ -89,6 +99,7 @@ async function submitForm() {
   formData.append('description', form.value.description);
   formData.append('latitude', props.latitude);
   formData.append('longitude', props.longitude);
+  formData.append('city_id', cityStore.selectedCity.id);
 
   if (form.value.photos && form.value.photos.length > 0) {
     for (const photo of form.value.photos) {
@@ -97,15 +108,9 @@ async function submitForm() {
   }
 
   try {
-    const response = await api.post('/api/locations', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    await locationStore.createLocation(formData);
 
-    locationStore.addLocation(response.data);
-
-    $q.notify({
+    $q.notify({ // Возвращаем $q.notify
       color: 'positive',
       message: 'Локация успешно создана!',
       icon: 'check',
@@ -117,7 +122,7 @@ async function submitForm() {
     if (error.response && error.response.status === 422) {
       errors.value = error.response.data.errors;
     } else {
-      $q.notify({
+      $q.notify({ // Возвращаем $q.notify
         color: 'negative',
         message: 'Ошибка при создании локации. Пожалуйста, попробуйте еще раз.',
         icon: 'report_problem',

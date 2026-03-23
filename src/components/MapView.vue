@@ -100,7 +100,10 @@ watch(selectedLocation, (newVal) => {
   modalOpen.value = !!newVal;
 });
 
-function openLocationModal(loc) {
+function openLocationModal(loc, event) {
+  // Stop the event from propagating to the map
+  L.DomEvent.stop(event);
+
   // Prevent opening location details when in picking mode
   if (isPickingMode.value) return;
   locationStore.selectLocation(loc);
@@ -161,7 +164,7 @@ function getMarkerIcon(location) {
       :key="location.id"
       :lat-lng="[location.latitude, location.longitude]"
       :icon="getMarkerIcon(location)"
-      @click.stop="openLocationModal(location)"
+      @click="openLocationModal(location, $event)"
     >
       <LTooltip
         :permanent="true"
