@@ -2,14 +2,14 @@
   <q-layout view="lHh Lpr lFf">
     <q-header elevated v-if="$route.name !== 'Location'">
       <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
+<!--        <q-btn-->
+<!--          flat-->
+<!--          dense-->
+<!--          round-->
+<!--          icon="menu"-->
+<!--          aria-label="Menu"-->
+<!--          @click="toggleLeftDrawer"-->
+<!--        />-->
 
         <q-toolbar-title>
           Locsy
@@ -18,18 +18,39 @@
         <div class="q-pa-md">
           <q-select
             filled
+            dark
+            color="white"
             style="width: 300px"
             v-model="cityStore.selectedCity"
             :options="cityStore.cities"
             label="Выберите город"
-            use-input
             dense
-            input-debounce="300"
             clearable
-            label-color="gray"
-            input-style="color: white"
-            @filter="filterFn"
-          />
+            @popup-show="() => cityStore.fetchCities()"
+          >
+            <template v-slot:before-options>
+              <q-item>
+                <q-item-section>
+                  <q-input
+                    dense
+                    autofocus
+                    color="white"
+                    input-style="color: white"
+                    placeholder="Поиск..."
+                    @update:model-value="val => cityStore.fetchCities(val)"
+                    debounce="300"
+                  />
+                </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  Город не найден
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
         </div>
 
         <!-- User Info Section -->
@@ -104,12 +125,6 @@ function openCreateLocationDialog() {
   router.push({ path: '/', query: { picking: 'true' } });
 }
 
-function filterFn (val, update) {
-  update(() => {
-    cityStore.fetchCities(val);
-  })
-}
-
 // Try to fetch user on component mount to check for existing session
 onMounted(() => {
   authStore.fetchUser();
@@ -164,9 +179,9 @@ const linksList = [
 
 const leftDrawerOpen = ref(false)
 
-function toggleLeftDrawer () {
-  leftDrawerOpen.value = !leftDrawerOpen.value
-}
+// function toggleLeftDrawer () {
+//   leftDrawerOpen.value = !leftDrawerOpen.value
+// }
 </script>
 
 <style>
