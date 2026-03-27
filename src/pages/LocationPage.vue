@@ -68,6 +68,11 @@ function openGallery(index) {
   fullscreen.value = true;
 }
 
+function addPhoto() {
+  // TODO: Implement photo upload logic
+  console.log('Add photo button clicked');
+}
+
 function goBack() {
   router.back()
 }
@@ -80,7 +85,23 @@ function goBack() {
     </q-page-sticky>
 
     <q-page-sticky position="top-right" :offset="[18, 18]" style="z-index: 10">
-      <q-btn round dense push :icon="isFavorite ? 'favorite' : 'favorite_border'" @click="toggleFavorite" color="white" text-color="blue"/>
+      <div class="row q-gutter-sm">
+        <q-btn round dense push :icon="isFavorite ? 'favorite' : 'favorite_border'" @click="toggleFavorite" color="white" text-color="blue"/>
+        <q-btn-dropdown
+          dense push
+          icon="more_vert"
+          color="white"
+          text-color="primary"
+        >
+          <q-list>
+            <q-item clickable v-close-popup @click="addPhoto">
+              <q-item-section>
+                <q-item-label>Добавить фото</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-btn-dropdown>
+      </div>
     </q-page-sticky>
 
     <div v-if="loading" class="fullscreen row flex-center">
