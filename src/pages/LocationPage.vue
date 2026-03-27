@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from 'boot/axios.js'
 import { useAuthStore } from 'stores/auth-store'
+import PhotoUploader from 'components/PhotoUploader.vue' // Import the new component
 
 const route = useRoute()
 const router = useRouter()
@@ -10,6 +11,7 @@ const authStore = useAuthStore()
 const id = route.params.id
 const location = ref(null)
 const loading = ref(true)
+const showPhotoUploaderDialog = ref(false) // Control dialog visibility
 
 const slide = ref(0)
 const fullscreen = ref(false)
@@ -20,6 +22,10 @@ const photoGallery = computed(() => {
 });
 
 onMounted(async () => {
+  await fetchLocationData();
+})
+
+async function fetchLocationData() {
   loading.value = true;
   try {
     const response = await api.get(`/api/location/${id}`)
@@ -32,7 +38,7 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-})
+}
 
 async function checkFavoriteStatus() {
   try {
@@ -69,8 +75,12 @@ function openGallery(index) {
 }
 
 function addPhoto() {
-  // TODO: Implement photo upload logic
-  console.log('Add photo button clicked');
+  showPhotoUploaderDialog.value = true; // Open the dialog
+}
+
+async function handlePhotosUploaded() {
+  showPhotoUploaderDialog.value = false; // Close dialog
+  await fetchLocationData(); // Refresh location data to show new photos
 }
 
 function goBack() {
@@ -88,7 +98,7 @@ function goBack() {
       <div class="row q-gutter-sm">
         <q-btn round dense push :icon="isFavorite ? 'favorite' : 'favorite_border'" @click="toggleFavorite" color="white" text-color="blue"/>
         <q-btn-dropdown
-          dense push
+          round dense push
           icon="more_vert"
           color="white"
           text-color="primary"
@@ -185,6 +195,15 @@ function goBack() {
         </template>
       </q-carousel>
     </template>
+
+    <!-- Photo Uploader Dialog -->
+    <q-dialog v-model="showPhotoUploaderDialog">
+      <PhotoUploader
+        :location-id="location?.id"
+        @close="showPhotoUploaderDialog = false"
+        @uploaded="handlePhotosUploaded"
+      />
+    </q-dialog>
 
   </q-page>
 </template>
