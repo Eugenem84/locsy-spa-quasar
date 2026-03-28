@@ -18,7 +18,8 @@
         <template v-slot:list="scope">
           <div class="row q-gutter-md q-pa-md" v-if="scope.files.length > 0">
             <div v-for="file in scope.files" :key="file.__key" style="width: 100px">
-              <q-img :src="file.__img.src" :ratio="1" class="rounded-borders">
+              <div class="relative-position">
+                <q-img :src="file.__img.src" :ratio="1" class="rounded-borders" />
                 <q-btn
                   size="sm"
                   flat
@@ -29,7 +30,7 @@
                   class="absolute-top-right"
                   @click="scope.removeFile(file)"
                 />
-              </q-img>
+              </div>
               <div class="ellipsis q-mt-xs text-center" :title="file.name">{{ file.name }}</div>
             </div>
           </div>
@@ -75,6 +76,7 @@ function onFilesAdded(addedFiles) {
 }
 
 function onFilesRemoved(removedFiles) {
+  console.log('onFilesRemoved', removedFiles)
   const removedKeys = removedFiles.map(f => f.__key);
   files.value = files.value.filter(f => !removedKeys.includes(f.__key));
 }

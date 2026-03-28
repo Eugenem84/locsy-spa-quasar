@@ -4,10 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from 'boot/axios.js'
 import { useAuthStore } from 'stores/auth-store'
 import PhotoUploader from 'components/PhotoUploader.vue' // Import the new component
+import { useQuasar } from 'quasar'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const $q = useQuasar()
 const id = route.params.id
 const location = ref(null)
 const loading = ref(true)
@@ -18,7 +20,15 @@ const fullscreen = ref(false)
 const isFavorite = ref(false)
 
 const photoGallery = computed(() => {
-  return location.value?.photos?.map(p => p.full_url) || [];
+  return location.value?.photos || [];
+});
+
+const canDelete = computed(() => {
+  if (!authStore.isLoggedIn || !photoGallery.value[slide.value]) {
+    return false;
+  }
+  const photo = photoGallery.value[slide.value];
+  return photo.user_id === authStore.user.id;
 });
 
 onMounted(async () => {
@@ -83,6 +93,34 @@ async function handlePhotosUploaded() {
   await fetchLocationData(); // Refresh location data to show new photos
 }
 
+function deletePhoto() {
+  if (!canDelete.value) return;
+
+  $q.dialog({
+    title: 'Подтверждение',
+    message: 'Вы уверены, что хотите удалить эту фотографию?',
+    cancel: true,
+    persistent: true
+  }).onOk(async () => {
+    const photo = photoGallery.value[slide.value];
+    try {
+      await api.delete(`/api/photos/${photo.id}`);
+      fullscreen.value = false;
+      await fetchLocationData();
+      $q.notify({
+        color: 'positive',
+        message: 'Фотография успешно удалена'
+      })
+    } catch (error) {
+      console.error('Failed to delete photo:', error);
+      $q.notify({
+        color: 'negative',
+        message: 'Не удалось удалить фотографию'
+      })
+    }
+  });
+}
+
 function goBack() {
   router.back()
 }
@@ -98,6 +136,7 @@ function goBack() {
       <div class="row q-gutter-sm">
         <q-btn round dense push :icon="isFavorite ? 'favorite' : 'favorite_border'" @click="toggleFavorite" color="white" text-color="blue"/>
         <q-btn-dropdown
+          v-if="authStore.isLoggedIn"
           round dense push
           icon="more_vert"
           color="white"
@@ -128,13 +167,13 @@ function goBack() {
       <q-scroll-area :style="{ height: '70vh' }" class="q-mb-md">
         <div class="photo-grid q-pa-md">
           <div
-            v-for="(photoUrl, index) in photoGallery"
-            :key="index"
+            v-for="(photo, index) in photoGallery"
+            :key="photo.id"
             class="photo-card"
             @click="openGallery(index)"
           >
             <q-img
-              :src="photoUrl"
+              :src="photo.full_url"
               :ratio="4/3"
               spinner-color="grey-5"
               class="rounded-borders"
@@ -166,13 +205,13 @@ function goBack() {
         class="bg-black"
       >
         <q-carousel-slide
-          v-for="(photoUrl, index) in photoGallery"
-          :key="index"
+          v-for="(photo, index) in photoGallery"
+          :key="photo.id"
           :name="index"
           class="flex flex-center no-padding"
         >
           <q-img
-            :src="photoUrl"
+            :src="photo.full_url"
             fit="contain"
             spinner-color="white"
             style="width: 100%; height: 100%;"
@@ -190,6 +229,18 @@ function goBack() {
               push round dense
               icon="close"
               @click="fullscreen = false"
+            />
+          </q-carousel-control>
+          <q-carousel-control
+            position="bottom-left"
+            :offset="[18, 18]"
+            class="text-white"
+            v-if="canDelete"
+          >
+            <q-btn
+              push round dense
+              icon="delete"
+              @click="deletePhoto"
             />
           </q-carousel-control>
         </template>
