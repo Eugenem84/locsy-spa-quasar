@@ -30,6 +30,7 @@ const mapInstance = computed(() => mapRef.value?.leafletObject);
 const initialCenter = computed(() => cityStore.selectedCity?.coords || [55.751244, 37.618423]); // Default to Moscow
 const locations = computed(() => locationStore.locations);
 const selectedLocation = computed(() => locationStore.selectedLocation);
+const selectedLocationAddress = ref('');
 
 const modalOpen = ref(false);
 const createLocationDialogOpen = ref(false);
@@ -100,6 +101,25 @@ watch(selectedLocation, (newVal) => {
   modalOpen.value = !!newVal;
 });
 
+async function fetchAddress(lat, lon) {
+  try {
+    selectedLocationAddress.value = 'Загрузка адреса...';
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    if (data && data.display_name) {
+      selectedLocationAddress.value = data.display_name;
+    } else {
+      selectedLocationAddress.value = 'Адрес не найден';
+    }
+  } catch (error) {
+    console.error('There was a problem with the fetch operation:', error);
+    selectedLocationAddress.value = 'Не удалось загрузить адрес';
+  }
+}
+
 function openLocationModal(loc, event) {
   // Stop the event from propagating to the map
   L.DomEvent.stop(event);
@@ -107,10 +127,12 @@ function openLocationModal(loc, event) {
   // Prevent opening location details when in picking mode
   if (isPickingMode.value) return;
   locationStore.selectLocation(loc);
+  fetchAddress(loc.latitude, loc.longitude);
 }
 
 function closeModal() {
   locationStore.selectLocation(null);
+  selectedLocationAddress.value = '';
 }
 
 function goToLocation() {
@@ -211,7 +233,11 @@ function getMarkerIcon(location) {
           </div>
         </q-scroll-area>
 
-        <div class="text-grey-14">{{ selectedLocation?.description}}</div>
+        <div class="text-grey-14 q-mb-md">{{ selectedLocation?.description}}</div>
+
+        <div v-if="selectedLocationAddress" class="text-caption text-grey q-mt-sm">
+          {{ selectedLocationAddress }}
+        </div>
       </q-card-section>
     </q-card>
   </div>
