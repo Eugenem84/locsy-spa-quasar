@@ -234,8 +234,13 @@ function getMarkerIcon(location) {
         </q-scroll-area>
 
         <div class="text-grey-14 q-mb-md">{{ selectedLocation?.description}}</div>
+      </q-card-section>
 
-        <div v-if="selectedLocationAddress" class="text-caption text-grey q-mt-sm">
+      <q-separator />
+
+      <q-card-section v-if="selectedLocationAddress" class="text-center">
+        <div class="text-subtitle2 text-grey-8 q-mb-xs">Адрес</div>
+        <div class="text-caption text-grey">
           {{ selectedLocationAddress }}
         </div>
       </q-card-section>
