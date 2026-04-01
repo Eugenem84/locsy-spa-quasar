@@ -14,7 +14,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "stores/auth-store";
 import { api } from 'boot/axios.js'
 import L from 'leaflet';
-import { debounce } from 'quasar';
+import { debounce, useQuasar } from 'quasar';
 import CreateLocationForm from "components/CreateLocationForm.vue";
 
 const router = useRouter();
@@ -22,10 +22,13 @@ const route = useRoute();
 const cityStore = useCityStore();
 const locationStore = useLocationStore();
 const authStore = useAuthStore();
+const $q = useQuasar();
 
 const favorites = ref([]);
 const mapRef = ref(null); // Ref for the map instance
 const mapInstance = computed(() => mapRef.value?.leafletObject);
+const pickingNotification = ref(null);
+
 
 const initialCenter = computed(() => cityStore.selectedCity?.coords || [55.751244, 37.618423]); // Default to Moscow
 const locations = computed(() => locationStore.locations);
@@ -44,12 +47,42 @@ watch(isPickingMode, (isPicking) => {
     if (mapEl) {
       if (isPicking) {
         mapEl.classList.add('picking-mode');
+        document.addEventListener('keydown', handleEscKey);
+        showPickingNotification();
       } else {
         mapEl.classList.remove('picking-mode');
+        document.removeEventListener('keydown', handleEscKey);
+        if (pickingNotification.value) {
+          pickingNotification.value();
+          pickingNotification.value = null;
+        }
       }
     }
   });
 });
+
+function showPickingNotification() {
+  pickingNotification.value = $q.notify({
+    message: 'Выберите место на карте для создания новой локации.',
+    color: 'primary',
+    icon: 'place',
+    position: 'bottom',
+    timeout: 0, // Уведомление не будет автоматически скрыто
+    actions: [
+      { label: 'Отмена', color: 'white', handler: () => cancelPickingMode() }
+    ]
+  });
+}
+
+function cancelPickingMode() {
+  router.push({ path: '/' });
+}
+
+function handleEscKey(event) {
+  if (event.key === 'Escape') {
+    cancelPickingMode();
+  }
+}
 
 
 const fetchLocations = debounce(async () => {
@@ -70,6 +103,10 @@ async function fetchFavorites() {
 
 function handleMapClick(event) {
   if (isPickingMode.value) {
+    if (pickingNotification.value) {
+      pickingNotification.value();
+      pickingNotification.value = null;
+    }
     newLocationCoords.value = event.latlng;
     createLocationDialogOpen.value = true;
   }
@@ -88,6 +125,10 @@ function onLocationCreated() {
 
 onMounted(() => {
   fetchFavorites();
+  if (isPickingMode.value) {
+    document.addEventListener('keydown', handleEscKey);
+    showPickingNotification();
+  }
 });
 
 // When the selected city changes, fly to its coordinates
