@@ -1,34 +1,34 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { api } from 'boot/axios.js'
 import { useCityStore } from "stores/city.js";
+import { useLocationStore } from "stores/location.js";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "stores/auth-store";
 
 const cityStore = useCityStore()
+const locationStore = useLocationStore()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const locations = ref([])
 const loading = ref(false)
 const favorites = ref([])
 
-async function loadLocations(cityId) {
+const locations = computed(() => locationStore.locations)
+
+async function loadLocations() {
+  const cityId = cityStore.selectedCity?.id;
   if (!cityId) {
-    locations.value = []
-    return
+    locationStore.locations = [];
+    return;
   }
-  loading.value = true
+  loading.value = true;
   try {
-    const { data } = await api.get('/api/locations', {
-      params: { city_id: cityId }
-    })
-    locations.value = data
+    await locationStore.fetchLocationsForList(cityId);
   } catch (err) {
-    console.error('error loading locations: ', err)
-    locations.value = []
+    console.error('error loading locations: ', err);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
@@ -44,15 +44,23 @@ async function fetchFavorites() {
 
 onMounted(() => {
   fetchFavorites();
+  loadLocations();
 });
 
 watch(
   () => cityStore.selectedCity?.id,
-  (newId) => {
-    loadLocations(newId)
+  () => {
+    loadLocations();
+  }
+);
+
+watch(
+  () => locationStore.selectedCategoryIds,
+  () => {
+    loadLocations();
   },
-  { immediate: true }
-)
+  { deep: true }
+);
 
 function selectLocation(location){
   if (location?.id) {

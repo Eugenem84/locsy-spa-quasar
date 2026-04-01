@@ -45,6 +45,24 @@ export const useLocationStore = defineStore('location', () => {
     }
   }
 
+  async function fetchLocationsForList(cityId) {
+    if (!cityId) {
+      locations.value = [];
+      return;
+    }
+    try {
+      const params = { city_id: cityId };
+      if (selectedCategoryIds.value.length > 0) {
+        params.category_ids = selectedCategoryIds.value;
+      }
+      const { data } = await api.get('/api/locations', { params });
+      locations.value = data;
+    } catch (error) {
+      console.error('Error fetching locations for list:', error);
+      locations.value = [];
+    }
+  }
+
   function selectLocation(location) {
     selectedLocation.value = location;
   }
@@ -73,5 +91,5 @@ export const useLocationStore = defineStore('location', () => {
     return data;
   }
 
-  return { locations, selectedLocation, selectedCategoryIds, fetchLocations, fetchLocationsByBounds, selectLocation, createLocation, addLocation, setSelectedCategoryIds };
+  return { locations, selectedLocation, selectedCategoryIds, fetchLocations, fetchLocationsByBounds, fetchLocationsForList, selectLocation, createLocation, addLocation, setSelectedCategoryIds };
 });
