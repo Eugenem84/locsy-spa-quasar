@@ -26,6 +26,32 @@
           :error-message="errors.description?.join(', ')"
         />
 
+        <!-- Поле для выбора категорий -->
+        <q-select
+          v-model="form.category_ids"
+          label="Категории"
+          filled
+          multiple
+          :options="categoryOptions"
+          option-value="id"
+          option-label="name"
+          emit-value
+          map-options
+          use-chips
+          class="q-mt-md"
+          :loading="categoryStore.isLoading"
+          :error="!!errors.category_ids"
+          :error-message="errors.category_ids?.join(', ')"
+        >
+          <template v-slot:no-option>
+            <q-item>
+              <q-item-section class="text-grey">
+                {{ categoryStore.isLoading ? 'Загрузка категорий...' : 'Категории не найдены' }}
+              </q-item-section>
+            </q-item>
+</template>
+        </q-select>
+
         <q-file
           v-model="form.photos"
           label="Фотографии"
@@ -51,10 +77,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useQuasar } from 'quasar'; // Возвращаем стандартный импорт
+import { ref, onMounted, computed } from 'vue';
+import { useQuasar } from 'quasar';
 import { useLocationStore } from "stores/location";
 import { useCityStore } from "stores/city";
+import { useCategoryStore } from "stores/category";
+//import { error } from '@quasar/app-vite/lib/utils/logger.js'
 
 const props = defineProps({
   latitude: {
@@ -69,21 +97,45 @@ const props = defineProps({
 
 const emit = defineEmits(['location-created']);
 
-const $q = useQuasar(); // Возвращаем стандартное объявление
+const $q = useQuasar();
 const locationStore = useLocationStore();
 const cityStore = useCityStore();
+const categoryStore = useCategoryStore();
 
 const form = ref({
   name: '',
   description: '',
+  category_ids: [],
   photos: [],
 });
 const errors = ref({});
 const loading = ref(false);
 
+// Вычисляемое свойство для опций категорий
+const categoryOptions = computed(() => {
+  return categoryStore.categories.map(category => ({
+    id: category.id,
+    name: category.name
+  }));
+});
+
+// Загружаем категории при монтировании компонента
+onMounted(async () => {
+  try {
+    await categoryStore.fetchCategories();
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
+    $q.notify({
+        color: 'negative',
+      message: 'Ошибка при загрузке категорий',
+        icon: 'report_problem',
+      });
+    }
+});
+
 async function submitForm() {
   if (!cityStore.selectedCity) {
-    $q.notify({ // Возвращаем $q.notify
+    $q.notify({
       color: 'negative',
       message: 'Пожалуйста, выберите город перед созданием локации.',
       icon: 'report_problem',
@@ -94,12 +146,21 @@ async function submitForm() {
   loading.value = true;
   errors.value = {};
 
+  console.log('Submitting with category IDs:', form.value.category_ids);
+
   const formData = new FormData();
   formData.append('name', form.value.name);
   formData.append('description', form.value.description);
   formData.append('latitude', props.latitude);
   formData.append('longitude', props.longitude);
   formData.append('city_id', cityStore.selectedCity.id);
+
+  // Добавляем выбранные категории
+  if (form.value.category_ids && form.value.category_ids.length > 0) {
+    form.value.category_ids.forEach(categoryId => {
+      formData.append('category_ids[]', categoryId);
+    });
+}
 
   if (form.value.photos && form.value.photos.length > 0) {
     for (const photo of form.value.photos) {
@@ -110,7 +171,7 @@ async function submitForm() {
   try {
     await locationStore.createLocation(formData);
 
-    $q.notify({ // Возвращаем $q.notify
+    $q.notify({
       color: 'positive',
       message: 'Локация успешно создана!',
       icon: 'check',
@@ -122,7 +183,7 @@ async function submitForm() {
     if (error.response && error.response.status === 422) {
       errors.value = error.response.data.errors;
     } else {
-      $q.notify({ // Возвращаем $q.notify
+      $q.notify({
         color: 'negative',
         message: 'Ошибка при создании локации. Пожалуйста, попробуйте еще раз.',
         icon: 'report_problem',
