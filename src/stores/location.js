@@ -6,6 +6,7 @@ import { api } from 'boot/axios';
 export const useLocationStore = defineStore('location', () => {
   const locations = ref([]);
   const selectedLocation = ref(null);
+  const selectedCategoryIds = ref([]); // Новое состояние для ID категорий
 
   async function fetchLocations(cityId) {
     if (!cityId) {
@@ -31,6 +32,11 @@ export const useLocationStore = defineStore('location', () => {
         ne_lat: bounds.getNorthEast().lat,
         ne_lng: bounds.getNorthEast().lng,
       };
+
+      if (selectedCategoryIds.value.length > 0) {
+        params.category_ids = selectedCategoryIds.value;
+      }
+
       const { data } = await api.get('/api/locations/by-bounds', { params });
       locations.value = data;
     } catch (error) {
@@ -41,6 +47,10 @@ export const useLocationStore = defineStore('location', () => {
 
   function selectLocation(location) {
     selectedLocation.value = location;
+  }
+
+  function setSelectedCategoryIds(ids) {
+    selectedCategoryIds.value = ids;
   }
 
   // This function just adds a location to the local state
@@ -63,5 +73,5 @@ export const useLocationStore = defineStore('location', () => {
     return data;
   }
 
-  return { locations, selectedLocation, fetchLocations, fetchLocationsByBounds, selectLocation, createLocation, addLocation };
+  return { locations, selectedLocation, selectedCategoryIds, fetchLocations, fetchLocationsByBounds, selectLocation, createLocation, addLocation, setSelectedCategoryIds };
 });

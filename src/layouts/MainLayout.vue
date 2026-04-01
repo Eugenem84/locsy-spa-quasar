@@ -53,6 +53,59 @@
           </q-select>
         </div>
 
+        <div class="q-pa-md">
+          <q-select
+            filled
+            dark
+            multiple
+            color="white"
+            style="width: 300px"
+            v-model="locationStore.selectedCategoryIds"
+            :options="categoryStore.categories"
+            :display-value="categoryDisplayValue"
+            option-value="id"
+            option-label="name"
+            label="Фильтр по категориям"
+            dense
+            emit-value
+            map-options
+            @popup-show="() => categoryStore.fetchCategories()"
+          >
+            <template v-slot:append>
+              <q-icon
+                v-if="locationStore.selectedCategoryIds.length > 0"
+                name="clear"
+                class="cursor-pointer"
+                @click.stop.prevent="locationStore.selectedCategoryIds = []"
+              />
+            </template>
+            <template v-slot:before-options>
+              <q-item clickable @click="toggleSelectAllCategories">
+                <q-item-section>
+                  <q-item-label>{{ selectAllLabel }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:option="{ itemProps, opt, selected, toggleOption }">
+              <q-item v-bind="itemProps">
+                <q-item-section>
+                  <q-item-label>{{ opt.name }}</q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <q-checkbox :model-value="selected" @update:model-value="toggleOption(opt)" />
+                </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  Категории не найдены
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+        </div>
+
         <!-- User Info Section -->
         <div v-if="authStore.isLoggedIn" class="q-ml-md">
           <q-btn-dropdown flat :label="authStore.userName">
@@ -119,16 +172,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
 import UserProfile from 'components/UserProfile.vue'
 import { useCityStore} from "stores/city.js";
 import { useAuthStore } from "stores/auth-store";
+import { useCategoryStore } from "stores/category";
+import { useLocationStore } from "stores/location";
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const cityStore = useCityStore()
 const authStore = useAuthStore();
+const categoryStore = useCategoryStore();
+const locationStore = useLocationStore();
 const profileModalOpen = ref(false);
 
 function openCreateLocationDialog() {
@@ -136,10 +193,53 @@ function openCreateLocationDialog() {
   router.push({ path: '/', query: { picking: 'true' } });
 }
 
+// "Select All" logic
+const areAllCategoriesSelected = computed(() => {
+  const allCategoryIds = categoryStore.categories.map(c => c.id);
+  return allCategoryIds.length > 0 && locationStore.selectedCategoryIds.length === allCategoryIds.length;
+});
+
+const selectAllLabel = computed(() => {
+  return areAllCategoriesSelected.value ? 'Снять выделение' : 'Выбрать все';
+});
+
+function toggleSelectAllCategories() {
+  if (areAllCategoriesSelected.value) {
+    locationStore.selectedCategoryIds = [];
+  } else {
+    locationStore.selectedCategoryIds = categoryStore.categories.map(c => c.id);
+  }
+}
+
+const categoryDisplayValue = computed(() => {
+  const count = locationStore.selectedCategoryIds.length;
+  if (count === 0) {
+    return null; // Показывает label
+  }
+  if (count === 1) {
+    const category = categoryStore.categories.find(c => c.id === locationStore.selectedCategoryIds[0]);
+    return category ? category.name : '1 категория';
+  }
+  // Правильное склонение для русского языка
+  const lastDigit = count % 10;
+  const lastTwoDigits = count % 100;
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+    return `${count} категорий выбрано`;
+  }
+  if (lastDigit === 1) {
+    return `${count} категория выбрана`;
+  }
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return `${count} категории выбрано`;
+  }
+  return `${count} категорий выбрано`;
+});
+
 // Try to fetch user on component mount to check for existing session
 onMounted(async () => {
   await authStore.fetchUser();
   await cityStore.fetchCities();
+  await categoryStore.fetchCategories();
 });
 
 watch(() => authStore.user, (newUser) => {

@@ -148,6 +148,10 @@ watch(() => authStore.isLoggedIn, (isLoggedIn) => {
   }
 });
 
+watch(() => locationStore.selectedCategoryIds, () => {
+  doFetchLocations();
+}, { deep: true });
+
 
 // When the selected city changes, fly to its coordinates
 watch(() => cityStore.selectedCity, (newCity) => {
