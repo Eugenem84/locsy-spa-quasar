@@ -109,6 +109,7 @@ async function fetchAddress(lat, lon) {
       throw new Error('Network response was not ok');
     }
     const data = await response.json();
+    console.log('Nominatim API Response:', data); // Вывод ответа API в консоль
     if (data && data.display_name) {
       selectedLocationAddress.value = data.display_name;
     } else {

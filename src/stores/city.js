@@ -7,6 +7,10 @@ export const useCityStore = defineStore('city', () => {
   const cities = ref([])
   const selectedCity = ref(null)
 
+  function setSelectedCity(city) {
+    selectedCity.value = city;
+  }
+
   async function fetchCities(search = '') {
     try {
       const { data } = await api.get('/api/cities', {
@@ -23,5 +27,5 @@ export const useCityStore = defineStore('city', () => {
     }
   }
 
-  return { cities, selectedCity, fetchCities }
+  return { cities, selectedCity, fetchCities, setSelectedCity }
 })

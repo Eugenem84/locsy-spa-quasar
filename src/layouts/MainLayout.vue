@@ -110,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
 import { useCityStore} from "stores/city.js";
 import { useAuthStore } from "stores/auth-store";
@@ -126,10 +126,19 @@ function openCreateLocationDialog() {
 }
 
 // Try to fetch user on component mount to check for existing session
-onMounted(() => {
-  authStore.fetchUser();
-  cityStore.fetchCities();
+onMounted(async () => {
+  await authStore.fetchUser();
+  await cityStore.fetchCities();
 });
+
+watch(() => authStore.user, (newUser) => {
+  if (newUser && newUser.city_id && cityStore.cities.length) {
+    const userCity = cityStore.cities.find(c => c.id === newUser.city_id);
+    if (userCity) {
+      cityStore.setSelectedCity(userCity);
+    }
+  }
+}, { immediate: true });
 
 
 const linksList = [
