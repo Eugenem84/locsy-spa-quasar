@@ -84,11 +84,14 @@ function handleEscKey(event) {
   }
 }
 
-
-const fetchLocations = debounce(async () => {
+// Core location fetching logic
+const doFetchLocations = async () => {
   if (!mapInstance.value) return;
   await locationStore.fetchLocationsByBounds(mapInstance.value.getBounds());
-}, 300);
+};
+
+// Debounced version for map movement
+const fetchLocations = debounce(doFetchLocations, 300);
 
 
 async function fetchFavorites() {
@@ -99,6 +102,12 @@ async function fetchFavorites() {
   } catch (error) {
     console.error('Failed to fetch favorites:', error);
   }
+}
+
+// New function to orchestrate initial load
+async function initializeMap() {
+  await fetchFavorites();
+  await doFetchLocations();
 }
 
 function handleMapClick(event) {
@@ -124,12 +133,21 @@ function onLocationCreated() {
 }
 
 onMounted(() => {
-  fetchFavorites();
   if (isPickingMode.value) {
     document.addEventListener('keydown', handleEscKey);
     showPickingNotification();
   }
 });
+
+// Watch for login/logout to keep favorites up to date
+watch(() => authStore.isLoggedIn, (isLoggedIn) => {
+  if (isLoggedIn) {
+    fetchFavorites();
+  } else {
+    favorites.value = [];
+  }
+});
+
 
 // When the selected city changes, fly to its coordinates
 watch(() => cityStore.selectedCity, (newCity) => {
@@ -214,7 +232,7 @@ function getMarkerIcon(location) {
     :zoom="12"
     :center="initialCenter"
     :attribution-control="false"
-    @ready="fetchLocations"
+    @ready="initializeMap"
     @moveend="fetchLocations"
     @click="handleMapClick"
   >
