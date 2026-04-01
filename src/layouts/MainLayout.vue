@@ -1,6 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated v-if="$route.name !== 'Location'">
+    <q-header elevated v-if="$route.name !== 'Location' && $route.name !== 'PhotographerProfile'">
       <q-toolbar>
 <!--        <q-btn-->
 <!--          flat-->

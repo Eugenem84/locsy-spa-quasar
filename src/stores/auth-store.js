@@ -8,7 +8,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Getters
   const isLoggedIn = computed(() => !!user.value);
-  const userName = computed(() => user.value?.name);
+  const userName = computed(() => {
+    if (user.value?.photographer_profile?.display_name) {
+      return user.value.photographer_profile.display_name;
+    }
+    return user.value?.name;
+  });
 
   // Actions
   function setUser(newUser) {

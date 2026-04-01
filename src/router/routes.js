@@ -1,4 +1,5 @@
 import LocationPage from "pages/LocationPage.vue";
+import PhotographerProfilePage from "pages/PhotographerProfilePage.vue";
 
 const routes = [
   {
@@ -10,6 +11,12 @@ const routes = [
         path: '/location/:id',
         name: 'Location',
         component: LocationPage,
+        props: true
+      },
+      {
+        path: '/photographer/:id',
+        name: 'PhotographerProfile',
+        component: PhotographerProfilePage,
         props: true
       },
       {

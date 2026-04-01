@@ -121,6 +121,11 @@ function deletePhoto() {
   });
 }
 
+function goToPhotographerProfile(userId) {
+  fullscreen.value = false; // Close the fullscreen view first
+  router.push(`/photographer/${userId}`);
+}
+
 function goBack() {
   router.back()
 }
@@ -228,6 +233,11 @@ function goBack() {
             spinner-color="white"
             style="width: 100%; height: 100%;"
           />
+          <div class="absolute-bottom-right text-center text-white q-pa-md text-h6" style="z-index: 20;" v-if="photo.user">
+             <a @click.stop="goToPhotographerProfile(photo.user.id)" class="photographer-link">
+              {{ photo.user.photographer_profile?.display_name || photo.user.name }}
+            </a>
+          </div>
         </q-carousel-slide>
 
         <!-- Кнопка закрытия в полноэкранном режиме -->
@@ -236,6 +246,7 @@ function goBack() {
             position="top-right"
             :offset="[18, 18]"
             class="text-white"
+            style="z-index: 20;"
           >
             <q-btn
               push round dense
@@ -247,6 +258,7 @@ function goBack() {
             position="bottom-left"
             :offset="[18, 18]"
             class="text-white"
+            style="z-index: 20;"
             v-if="canDelete"
           >
             <q-btn
@@ -301,5 +313,14 @@ function goBack() {
 .photo-card .q-img {
   width: 100%;
   height: auto;
+}
+
+.photographer-link {
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+.photographer-link:hover {
+  text-decoration: underline;
 }
 </style>
