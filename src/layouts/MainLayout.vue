@@ -67,6 +67,11 @@
                   <q-item-label>Добавить локацию</q-item-label>
                 </q-item-section>
               </q-item>
+              <q-item clickable @click="profileModalOpen = true">
+                <q-item-section>
+                  <q-item-label>Профиль</q-item-label>
+                </q-item-section>
+              </q-item>
               <q-item clickable v-close-popup @click="authStore.handleLogout">
                 <q-item-section>
                   <q-item-label>Выход</q-item-label>
@@ -106,12 +111,17 @@
     <q-page-container @click="leftDrawerOpen = false">
       <router-view />
     </q-page-container>
+
+    <q-dialog v-model="profileModalOpen">
+      <UserProfile @close="profileModalOpen = false" />
+    </q-dialog>
   </q-layout>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
+import UserProfile from 'components/UserProfile.vue'
 import { useCityStore} from "stores/city.js";
 import { useAuthStore } from "stores/auth-store";
 import { useRouter } from 'vue-router';
@@ -119,6 +129,7 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 const cityStore = useCityStore()
 const authStore = useAuthStore();
+const profileModalOpen = ref(false);
 
 function openCreateLocationDialog() {
   console.log('MainLayout: Нажата кнопка "Добавить локацию", меняю URL на /?picking=true');

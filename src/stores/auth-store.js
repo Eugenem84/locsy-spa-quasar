@@ -51,6 +51,15 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function updateUserCity(cityId) {
+    try {
+      const { data } = await api.put('/api/user/city', { city_id: cityId });
+      setUser(data.user);
+    } catch (error) {
+      console.error('Failed to update user city', error);
+    }
+  }
+
   return {
     user,
     isLoggedIn,
@@ -60,5 +69,6 @@ export const useAuthStore = defineStore('auth', () => {
     getCsrfCookie, // Exporting for potential use elsewhere
     fetchUser,
     handleLogout,
+    updateUserCity,
   };
 });
