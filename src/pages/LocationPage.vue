@@ -158,9 +158,21 @@ function goBack() {
     </div>
 
     <div v-if="!loading && location">
-      <!-- Название локации -->
+      <!-- Название локации и категории -->
       <div class="q-pa-md">
         <h4 class="text-h4 text-weight-bold q-mb-sm">{{ location.name }}</h4>
+        <!-- Блок для отображения категорий -->
+        <div v-if="location.categories && location.categories.length" class="q-gutter-sm">
+          <q-chip
+            v-for="category in location.categories"
+            :key="category.id"
+            color="primary"
+            text-color="white"
+            icon="label"
+          >
+            {{ category.name }}
+          </q-chip>
+        </div>
       </div>
 
       <!-- Сетка фотографий -->
