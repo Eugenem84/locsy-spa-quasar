@@ -125,6 +125,11 @@
                   <q-item-label>Профиль</q-item-label>
                 </q-item-section>
               </q-item>
+              <q-item clickable @click="openSelfPage">
+                <q-item-section>
+                  <q-item-label>Моя страница</q-item-label>
+                </q-item-section>
+              </q-item>
               <q-item clickable v-close-popup @click="authStore.handleLogout">
                 <q-item-section>
                   <q-item-label>Выход</q-item-label>
@@ -191,6 +196,12 @@ const profileModalOpen = ref(false);
 function openCreateLocationDialog() {
   console.log('MainLayout: Нажата кнопка "Добавить локацию", меняю URL на /?picking=true');
   router.push({ path: '/', query: { picking: 'true' } });
+}
+
+function openSelfPage() {
+  if (authStore.user) {
+    router.push({ name: 'PhotographerProfile', params: { id: authStore.user.id } });
+  }
 }
 
 // "Select All" logic
