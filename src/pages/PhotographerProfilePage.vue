@@ -78,6 +78,11 @@ function deletePhoto() {
   })
 }
 
+function goToLocation(locationId) {
+  fullscreen.value = false;
+  router.push(`/location/${locationId}`);
+}
+
 function goBack() {
   router.back()
 }
@@ -213,6 +218,11 @@ function goBack() {
             spinner-color="white"
             style="width: 100%; height: 100%;"
           />
+          <div class="absolute-bottom-right text-center text-white q-pa-md text-h6" style="z-index: 20;" v-if="photo.location">
+            <a @click.stop="goToLocation(photo.location.id)" class="location-link">
+              {{ photo.location.name }}
+            </a>
+          </div>
         </q-carousel-slide>
 
         <template v-slot:control>
@@ -274,5 +284,14 @@ function goBack() {
 .photo-card .q-img {
   width: 100%;
   height: auto;
+}
+
+.location-link {
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+.location-link:hover {
+  text-decoration: underline;
 }
 </style>
