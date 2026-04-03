@@ -108,7 +108,16 @@
 
         <!-- User Info Section -->
         <div v-if="authStore.isLoggedIn" class="q-ml-md">
-          <q-btn-dropdown flat :label="authStore.userName">
+          <q-btn-dropdown flat>
+            <template v-slot:label>
+              <div class="row items-center no-wrap">
+                <q-avatar size="24px" class="q-mr-sm">
+                  <img v-if="authStore.user && authStore.user.avatar" :src="authStore.user.avatar">
+                  <q-icon v-else name="account_circle" />
+                </q-avatar>
+                {{ authStore.userName }}
+              </div>
+            </template>
             <q-list>
               <q-item clickable v-close-popup to="/favorites">
                 <q-item-section>

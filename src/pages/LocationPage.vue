@@ -233,8 +233,12 @@ function goBack() {
             spinner-color="white"
             style="width: 100%; height: 100%;"
           />
-          <div class="absolute-bottom-right text-center text-white q-pa-md text-h6" style="z-index: 20;" v-if="photo.user">
-             <a @click.stop="goToPhotographerProfile(photo.user.id)" class="photographer-link">
+          <div class="absolute-bottom-right text-white q-pa-md text-h6" style="z-index: 20;" v-if="photo.user">
+            <a @click.stop="goToPhotographerProfile(photo.user.id)" class="photographer-link row items-center no-wrap">
+              <q-avatar size="32px" class="q-mr-sm">
+                <img v-if="photo.user.avatar" :src="photo.user.avatar">
+                <q-icon v-else name="account_circle" />
+              </q-avatar>
               {{ photo.user.photographer_profile?.display_name || photo.user.name }}
             </a>
           </div>

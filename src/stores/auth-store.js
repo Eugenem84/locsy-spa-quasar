@@ -18,6 +18,7 @@ export const useAuthStore = defineStore('auth', () => {
   // Actions
   function setUser(newUser) {
     user.value = newUser;
+    console.log('User object set in store:', user.value); // Added for debugging
   }
 
   function clearUser() {
