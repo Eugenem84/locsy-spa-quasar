@@ -176,13 +176,18 @@ async function submitForm() {
         color: 'info',
         message: 'Локация успешно создана и будет опубликована после модерации.',
         icon: 'info',
-        timeout: 5000
+        position: 'center',
+        timeout: 0,
+        offset: [0, 50],
+        actions: [{ label: 'OK', color: 'white' }]
       });
     } else {
       $q.notify({
         color: 'positive',
         message: 'Локация успешно создана!',
         icon: 'check',
+        timeout: 3000,
+        position: 'center',
       });
       // Если модерация не требуется, обновляем список локаций
       await locationStore.fetchLocationsForList(cityStore.selectedCity.id);
