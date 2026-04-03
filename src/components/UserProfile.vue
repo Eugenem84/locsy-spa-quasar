@@ -7,12 +7,23 @@
       @click="$emit('close')"
       class="absolute-top-right q-ma-sm z-top"
     />
-    <q-card-section>
+    <q-card-section class="flex flex-center column">
       <div class="text-h6">Профиль пользователя</div>
+      <q-avatar size="100px" class="q-mb-md">
+        <img :src="user.avatar || 'https://cdn.quasar.dev/img/avatar.png'" alt="User Avatar">
+      </q-avatar>
+      <q-file
+        v-model="avatarFile"
+        label="Загрузить аватар"
+        filled
+        dense
+        accept="image/*"
+        @update:model-value="handleAvatarUpload"
+        style="max-width: 200px"
+      />
     </q-card-section>
 
     <q-card-section>
-      <!-- Здесь будет информация о пользователе -->
       <p>Имя: {{ user.name }}</p>
       <p>Email: {{ user.email }}</p>
       <q-select
@@ -59,34 +70,27 @@ import { computed, ref, onMounted } from 'vue';
 import { useAuthStore } from 'stores/auth-store';
 import { useCityStore } from 'stores/city';
 import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar'; // Import useQuasar for notifications
 
 defineEmits(['close']);
 
 const authStore = useAuthStore();
 const cityStore = useCityStore();
 const router = useRouter();
+const $q = useQuasar(); // Initialize useQuasar
 
 const user = computed(() => authStore.user);
 const cities = computed(() => cityStore.cities);
 const selectedCity = ref(null);
+const avatarFile = ref(null); // To hold the selected file
 
 onMounted(async () => {
-  // We don't need to fetch all cities on mount,
-  // as the user's city is already in the user object.
-  // We will fetch cities when the user opens the select dropdown.
   if (user.value && user.value.city_id) {
-    // Find the city in the potentially already loaded list or create a temporary one
     const userCity = cityStore.cities.find(c => c.id === user.value.city_id);
     if (userCity) {
       selectedCity.value = userCity;
     } else {
-      // If the city is not in the list, we can pre-fill it with the known data
-      // This assumes the user object from the backend contains city info.
-      // Let's assume we need to fetch it to get the label.
-      // A better approach is to have the city name available in the user object.
-      // For now, let's just set the initial value for the select.
-      // The full city list will be loaded on popup-show.
-      await cityStore.fetchCities(); // fetch all to find the one
+      await cityStore.fetchCities();
       const foundCity = cityStore.cities.find(c => c.id === user.value.city_id);
        if (foundCity) {
          selectedCity.value = foundCity;
@@ -95,6 +99,24 @@ onMounted(async () => {
   }
 });
 
+async function handleAvatarUpload(file) {
+  if (!file) {
+    return;
+  }
+  try {
+    await authStore.uploadAvatar(file);
+    $q.notify({
+      type: 'positive',
+      message: 'Аватар успешно обновлен!'
+    });
+    avatarFile.value = null; // Clear the file input
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Ошибка при загрузке аватара: ' + (error.response?.data?.message || error.message)
+    });
+  }
+}
 
 async function updateCity(city) {
   selectedCity.value = city;

@@ -65,6 +65,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function uploadAvatar(file) {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const { data } = await api.post('/api/user/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      setUser(data.user); // Assuming the backend returns the updated user object
+    } catch (error) {
+      console.error('Failed to upload avatar', error);
+      throw error; // Re-throw to be handled by the component
+    }
+  }
+
   return {
     user,
     isLoggedIn,
@@ -75,5 +91,6 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUser,
     handleLogout,
     updateUserCity,
+    uploadAvatar, // Export the new action
   };
 });
