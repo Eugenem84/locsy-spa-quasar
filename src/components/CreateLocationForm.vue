@@ -49,7 +49,7 @@
                 {{ categoryStore.isLoading ? 'Загрузка категорий...' : 'Категории не найдены' }}
               </q-item-section>
             </q-item>
-</template>
+          </template>
         </q-select>
 
         <q-file
@@ -169,13 +169,24 @@ async function submitForm() {
   }
 
   try {
-    await locationStore.createLocation(formData);
+    const response = await locationStore.createLocation(formData);
 
-    $q.notify({
-      color: 'positive',
-      message: 'Локация успешно создана!',
-      icon: 'check',
-    });
+    if (response && response.needs_moderation) {
+      $q.notify({
+        color: 'info',
+        message: 'Локация успешно создана и будет опубликована после модерации.',
+        icon: 'info',
+        timeout: 5000
+      });
+    } else {
+      $q.notify({
+        color: 'positive',
+        message: 'Локация успешно создана!',
+        icon: 'check',
+      });
+      // Если модерация не требуется, обновляем список локаций
+      await locationStore.fetchLocationsForList(cityStore.selectedCity.id);
+    }
 
     emit('location-created');
 

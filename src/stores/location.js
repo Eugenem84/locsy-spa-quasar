@@ -86,8 +86,7 @@ export const useLocationStore = defineStore('location', () => {
         'Content-Type': 'multipart/form-data',
       },
     });
-    // On success, add the new location to the state and return it
-    addLocation(data);
+    // The component will handle the response and decide whether to refetch or not.
     return data;
   }
 
