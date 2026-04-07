@@ -7,7 +7,7 @@
         push
         rounded
         glossy
-        toggle-color="blue"
+        toggle-color="primary"
         :options="[
           { value: 'map', slot: 'map'},
           { value: 'list', slot: 'list'}
@@ -115,7 +115,7 @@ const locationId = ref(null)
 
 const selectorStyle = computed(() => {
   const style = {
-    'background-color': 'rgba(33, 150, 243, 0.9)',
+    'background-color': 'rgb(5,39,71)',
     'border-radius': '20px',
     'transition': 'width 0.3s ease-in-out'
   };

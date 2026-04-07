@@ -139,7 +139,7 @@ function goBack() {
 
     <q-page-sticky position="top-right" :offset="[18, 18]" style="z-index: 10">
       <div class="row q-gutter-sm">
-        <q-btn round dense push :icon="isFavorite ? 'favorite' : 'favorite_border'" @click="toggleFavorite" color="white" text-color="blue"/>
+        <q-btn round dense push :icon="isFavorite ? 'favorite' : 'favorite_border'" @click="toggleFavorite" color="white" text-color="accent"/>
         <q-btn-dropdown
           v-if="authStore.isLoggedIn"
           round dense push

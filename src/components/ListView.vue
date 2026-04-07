@@ -94,69 +94,71 @@ async function toggleFavorite(location) {
 </script>
 
 <template>
-  <div class="q-pa-md">
-    <div v-if="loading" class="text-center q-my-lg">
-      <q-spinner-dots color="primary" size="40px" />
-    </div>
+  <q-scroll-area style="height: 100vh;">
+    <div class="q-pa-md">
+      <div v-if="loading" class="text-center q-my-lg">
+        <q-spinner-dots color="primary" size="40px" />
+      </div>
 
-    <div v-else-if="locations.length > 0" class="q-gutter-y-lg">
-      <q-card
-        v-for="location in locations"
-        :key="location.id"
-        class="my-card"
-        flat
-        bordered
-      >
-        <div class="absolute-top-right q-pa-xs" style="z-index: 1;">
-          <q-btn
-            flat
-            round
-            :icon="isFavorite(location) ? 'favorite' : 'favorite_border'"
-            color="blue"
-            @click.stop="toggleFavorite(location)"
-          />
-        </div>
-
-        <q-card-section @click="selectLocation(location)" class="cursor-pointer">
-          <div class="text-h6 text-weight-medium">{{ location.name }}</div>
-        </q-card-section>
-
-        <q-scroll-area horizontal style="height: 160px; width: 100%;" @click="selectLocation(location)" class="cursor-pointer">
-          <div class="row no-wrap q-gutter-sm q-px-md">
-            <q-img
-              v-for="photo in location.photos"
-              :key="photo.id"
-              :src="photo.full_url"
-              class="rounded-borders"
-              spinner-color="grey-5"
-              style="width: 250px; height: 150px;"
-            >
-              <template v-if="!location.photos || location.photos.length === 0">
-                <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
-                  Нет фото
-                </div>
-              </template>
-            </q-img>
+      <div v-else-if="locations.length > 0" class="q-gutter-y-lg">
+        <q-card
+          v-for="location in locations"
+          :key="location.id"
+          class="my-card"
+          flat
+          bordered
+        >
+          <div class="absolute-top-right q-pa-xs" style="z-index: 1;">
+            <q-btn
+              flat
+              round
+              :icon="isFavorite(location) ? 'favorite' : 'favorite_border'"
+              color="blue"
+              @click.stop="toggleFavorite(location)"
+            />
           </div>
-        </q-scroll-area>
 
-        <q-card-section @click="selectLocation(location)" class="cursor-pointer">
-          <p class="text-body2 text-grey-8 ellipsis-3-lines">
-            {{ location.description || 'Нет описания.' }}
-          </p>
-        </q-card-section>
-      </q-card>
+          <q-card-section @click="selectLocation(location)" class="cursor-pointer">
+            <div class="text-h6 text-weight-medium">{{ location.name }}</div>
+          </q-card-section>
+
+          <q-scroll-area horizontal style="height: 160px; width: 100%;" @click="selectLocation(location)" class="cursor-pointer">
+            <div class="row no-wrap q-gutter-sm q-px-md">
+              <q-img
+                v-for="photo in location.photos"
+                :key="photo.id"
+                :src="photo.full_url"
+                class="rounded-borders"
+                spinner-color="grey-5"
+                style="width: 250px; height: 150px;"
+              >
+                <template v-if="!location.photos || location.photos.length === 0">
+                  <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
+                    Нет фото
+                  </div>
+                </template>
+              </q-img>
+            </div>
+          </q-scroll-area>
+
+          <q-card-section @click="selectLocation(location)" class="cursor-pointer">
+            <p class="text-body2 text-grey-8 ellipsis-3-lines">
+              {{ location.description || 'Нет описания.' }}
+            </p>
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <div v-else-if="!cityStore.selectedCity" class="text-center text-grey q-my-lg">
+        Выберите город, чтобы увидеть список локаций.
+      </div>
+
+      <div v-else class="text-center text-grey q-my-lg">
+        В этом городе пока нет локаций.
+      </div>
+
     </div>
-
-    <div v-else-if="!cityStore.selectedCity" class="text-center text-grey q-my-lg">
-      Выберите город, чтобы увидеть список локаций.
-    </div>
-
-    <div v-else class="text-center text-grey q-my-lg">
-      В этом городе пока нет локаций.
-    </div>
-
-  </div>
+  </q-scroll-area>
 </template>
 
 <style scoped>

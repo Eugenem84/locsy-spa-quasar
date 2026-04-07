@@ -19,7 +19,7 @@
           <q-select
             filled
             dark
-            color="white"
+            color="accent"
             style="width: 300px"
             v-model="cityStore.selectedCity"
             :options="cityStore.cities"

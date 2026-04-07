@@ -28,6 +28,7 @@ const favorites = ref([]);
 const mapRef = ref(null); // Ref for the map instance
 const mapInstance = computed(() => mapRef.value?.leafletObject);
 const pickingNotification = ref(null);
+const hoveredLocationId = ref(null);
 
 
 const initialCenter = computed(() => cityStore.selectedCity?.coords || [55.751244, 37.618423]); // Default to Moscow
@@ -206,24 +207,34 @@ function goToLocation() {
 }
 
 // Custom Icons
-function createCustomMarkerIcon(color) {
+function createCustomMarkerIcon(color, size = 36) {
   return L.divIcon({
     className: 'custom-div-icon',
-    html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" fill="${color}">
+    html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}" fill="${color}">
              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
            </svg>`,
-    iconSize: [36, 36],
-    iconAnchor: [18, 36], // Adjust anchor to point to the bottom center of the SVG
-    popupAnchor: [0, -30]
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size], // Adjust anchor to point to the bottom center of the SVG
+    popupAnchor: [0, -size]
   });
 }
 
-const defaultMarkerColor = '#1976D2'; // Quasar's primary blue
+const defaultMarkerColor = '#1861b1'; // Quasar's primary blue
 const favoriteMarkerColor = '#F97316'; // Quasar's amber/gold
 
 function getMarkerIcon(location) {
   const color = favorites.value.includes(location.id) ? favoriteMarkerColor : defaultMarkerColor;
-  return createCustomMarkerIcon(color);
+  const isHovered = hoveredLocationId.value === location.id;
+  const size = isHovered ? 48 : 36; // Increase size on hover
+  return createCustomMarkerIcon(color, size);
+}
+
+function onMarkerMouseOver(location) {
+  hoveredLocationId.value = location.id;
+}
+
+function onMarkerMouseOut() {
+  hoveredLocationId.value = null;
 }
 </script>
 
@@ -249,6 +260,8 @@ function getMarkerIcon(location) {
       :lat-lng="[location.latitude, location.longitude]"
       :icon="getMarkerIcon(location)"
       @click="openLocationModal(location, $event)"
+      @mouseover="onMarkerMouseOver(location)"
+      @mouseout="onMarkerMouseOut"
     >
       <LTooltip
         :permanent="true"
@@ -323,6 +336,12 @@ function getMarkerIcon(location) {
 <style scoped>
 .picking-mode {
   cursor: crosshair;
+}
+
+:deep(.custom-div-icon svg) {
+  /* Animate the SVG element itself, not the container div. */
+  /* This prevents the "jerky" motion from Leaflet repositioning the div. */
+  transition: width 0.5s ease-out, height 0.5s ease-out;
 }
 
 :deep(.leaflet-control-attribution) {
