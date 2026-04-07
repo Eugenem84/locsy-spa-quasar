@@ -95,7 +95,7 @@ async function toggleFavorite(location) {
 
 <template>
   <q-scroll-area style="height: 100vh;">
-    <div class="q-pa-md">
+    <div class="q-pa-md" style="padding-top: 55px; padding-bottom: 50px;">
       <div v-if="loading" class="text-center q-my-lg">
         <q-spinner-dots color="primary" size="40px" />
       </div>
@@ -113,7 +113,7 @@ async function toggleFavorite(location) {
               flat
               round
               :icon="isFavorite(location) ? 'favorite' : 'favorite_border'"
-              color="blue"
+              color="accent"
               @click.stop="toggleFavorite(location)"
             />
           </div>
