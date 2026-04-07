@@ -206,26 +206,24 @@ function goToLocation() {
 }
 
 // Custom Icons
-const defaultIcon = L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
+function createCustomMarkerIcon(color) {
+  return L.divIcon({
+    className: 'custom-div-icon',
+    html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" fill="${color}">
+             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+           </svg>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 36], // Adjust anchor to point to the bottom center of the SVG
+    popupAnchor: [0, -30]
+  });
+}
 
-const favoriteIcon = L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
+const defaultMarkerColor = '#1976D2'; // Quasar's primary blue
+const favoriteMarkerColor = '#F97316'; // Quasar's amber/gold
 
 function getMarkerIcon(location) {
-  return favorites.value.includes(location.id) ? favoriteIcon : defaultIcon;
+  const color = favorites.value.includes(location.id) ? favoriteMarkerColor : defaultMarkerColor;
+  return createCustomMarkerIcon(color);
 }
 </script>
 
@@ -329,7 +327,7 @@ function getMarkerIcon(location) {
 
 :deep(.leaflet-control-attribution) {
   display: none !important;
-} 
+}
 
 .location-bottom-sheet-wrapper {
   position: absolute;
