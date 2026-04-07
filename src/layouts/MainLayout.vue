@@ -12,7 +12,7 @@
 <!--        />-->
 
         <q-toolbar-title>
-          Locsy
+          <q-img src="/public/logo/logo.png" style="height: 50px; width: 150px" fit="contain" />
         </q-toolbar-title>
 
         <div class="q-pa-md">
@@ -58,10 +58,12 @@
           <q-btn-dropdown flat>
             <template v-slot:label>
               <div class="row items-center no-wrap">
-                <q-avatar size="24px" class="q-mr-sm">
-                  <img v-if="authStore.user && authStore.user.avatar" :src="authStore.user.avatar">
-                  <q-icon v-else name="account_circle" />
-                </q-avatar>
+                <div style="border: 2px solid #EA580C; border-radius: 50%; padding: 2px; display: inline-block;" class="q-mr-sm">
+                  <q-avatar size="32px">
+                    <img v-if="authStore.user && authStore.user.avatar" :src="authStore.user.avatar">
+                    <q-icon v-else name="account_circle" />
+                  </q-avatar>
+                </div>
 <!--                {{ authStore.userName }}-->
               </div>
             </template>
