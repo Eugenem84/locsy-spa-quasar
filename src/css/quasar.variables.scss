@@ -12,9 +12,14 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
-$primary   : #1976D2;
-$secondary : #26A69A;
-$accent    : #9C27B0;
+$primary   : #3E5F86;    // Основной синий для кнопок/элементов
+$secondary : #2F4A6B;    // Тёмно-синий для хедера
+$accent    : #F97316;    // Оранжевый для кнопок CTA
+
+// Добавляем кастомные цвета
+$header-blue : #2F4A6B;  // Цвет хедера
+$cta-orange  : #F97316;  // Основной оранжевый
+$cta-hover   : #EA580C;  // Оранжевый при наведении
 
 $dark      : #1D1D1D;
 $dark-page : #121212;
@@ -22,4 +27,9 @@ $dark-page : #121212;
 $positive  : #21BA45;
 $negative  : #C10015;
 $info      : #31CCEC;
-$warning   : #F2C037;
+$warning   : #F97316;    // Исправляем на оранжевый для consistency
+
+// Градиенты (используем современный синтаксис)
+$gradient-primary: linear-gradient(135deg, $primary 0%, #2F4A6B 100%) !important;
+$gradient-orange: linear-gradient(135deg, $cta-orange 0%, $cta-hover 100%);
+$gradient-header: linear-gradient(135deg, $primary 0%, #2F4A6B 100%)

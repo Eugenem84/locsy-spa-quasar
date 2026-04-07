@@ -1,0 +1,101 @@
+// app global css in SCSS form
+
+// Явно импортируем переменные
+@import 'src/css/quasar.variables.scss';
+
+// Кастомные цвета как CSS классы
+.bg-header-blue {
+  background: #2F4A6B !important;
+}
+
+.bg-cta-orange {
+  background: #F97316 !important;
+}
+
+.bg-cta-hover {
+  background: #EA580C !important;
+}
+
+.text-header-blue {
+  color: #2F4A6B !important;
+}
+
+.text-cta-orange {
+  color: #F97316 !important;
+}
+
+// Простые стили для хедера
+.q-header {
+  background: $header-blue !important;
+}
+
+// Простые стили для оранжевых кнопок CTA
+.cta-button {
+  background: $cta-orange !important;
+  color: white !important;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+}
+
+.cta-button:hover {
+  background: $cta-hover !important;
+}
+
+// Простые цветовые классы
+.bg-primary-custom { background: $primary; }
+.bg-header { background: #2F4A6B; }
+.bg-orange { background: #F97316; }
+
+// Градиентные классы
+.bg-gradient-primary {
+  background: $gradient-primary;
+}
+
+.bg-gradient-orange {
+  background: $gradient-orange;
+}
+
+.bg-gradient-header {
+  background: $gradient-header;
+}
+
+// Градиентный текст
+.text-gradient-primary {
+  background: $gradient-primary;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-orange {
+  background: $gradient-orange;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+// Дополнительные градиентные стили
+.gradient-card {
+  background: $gradient-primary;
+  border-radius: 12px;
+  color: white;
+
+  .q-card__section, .text-h6, .text-subtitle1 {
+    color: white;
+  }
+}
+
+.gradient-btn {
+  border: none;
+  color: white;
+
+  &.primary {
+    background: $gradient-primary;
+  }
+
+  &.orange {
+    background: $gradient-orange;
+  }
+}

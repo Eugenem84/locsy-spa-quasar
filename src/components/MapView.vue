@@ -327,9 +327,9 @@ function getMarkerIcon(location) {
   cursor: crosshair;
 }
 
-::v-deep .leaflet-control-attribution {
+:deep(.leaflet-control-attribution) {
   display: none !important;
-}
+} 
 
 .location-bottom-sheet-wrapper {
   position: absolute;
