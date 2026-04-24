@@ -24,6 +24,30 @@
             class="q-mb-md"
             :rules="[val => !!val || 'Email is required', val => /.+@.+\..+/.test(val) || 'Please enter a valid email']"
           />
+          <q-select
+            v-model="form.city_id"
+            :options="cityStore.cities"
+            label="Выберите город"
+            option-value="id"
+            option-label="name"
+            emit-value
+            map-options
+            outlined
+            dense
+            use-input
+            clearable
+            @filter="(val, update) => cityStore.fetchCities(val).then(() => update())"
+            class="q-mb-md"
+            :rules="[val => !!val || 'City is required']"
+          >
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  Город не найден
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
           <q-input
             v-model="form.password"
             label="Password"
@@ -56,19 +80,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { api } from 'boot/axios';
 import { useRouter } from 'vue-router';
+import { useCityStore } from 'stores/city';
 
 const form = ref({
   name: '',
   email: '',
   password: '',
-  password_confirmation: ''
+  password_confirmation: '',
+  city_id: null
 });
 
+const cityStore = useCityStore();
 const loading = ref(false);
 const router = useRouter();
+
+onMounted(() => {
+  cityStore.fetchCities();
+});
 
 const handleRegister = async () => {
   loading.value = true;
