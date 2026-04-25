@@ -12,7 +12,7 @@
 <!--        />-->
 
         <q-toolbar-title>
-          <q-img src="/public/logo/logo.png" style="height: 50px; width: 150px" fit="contain" />
+          <q-img src="/logo/logo.png" style="height: 50px; width: 150px" fit="contain" />
         </q-toolbar-title>
 
         <div class="q-pa-md">
