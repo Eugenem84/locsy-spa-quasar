@@ -3,7 +3,7 @@ import axios from 'axios'
 
 // Create a configured instance of Axios
 const api = axios.create({
-  baseURL: process.env.DEV ? 'http://localhost:8000' : 'https://api.example.com',
+  baseURL: process.env.DEV ? 'http://localhost:8000' : 'http://locsy.prod.medovf2h.beget.tech/',
   withCredentials: true, // This is still crucial
 });
 

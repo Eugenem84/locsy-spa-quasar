@@ -1,0 +1,9 @@
+# Ignore node_modules and build artifacts
+node_modules
+dist
+.quasar
+
+# Ignore IDE and OS files
+.vscode
+.idea
+*.DS_Store
