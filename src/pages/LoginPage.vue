@@ -57,7 +57,7 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     await api.get('/sanctum/csrf-cookie');
-    await api.post('/login', form.value);
+    await api.post('/api/login', form.value);
 
     // Fetch user data and save it in the store
     await authStore.fetchUser();

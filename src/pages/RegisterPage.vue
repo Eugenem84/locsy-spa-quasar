@@ -108,7 +108,7 @@ const handleRegister = async () => {
     await api.get('/sanctum/csrf-cookie');
 
     // Then, attempt to register using the web route.
-    await api.post('/register', form.value);
+    await api.post('/api/register', form.value);
 
     // If registration is successful, you might want to automatically log the user in
     // or redirect them to the login page. Here we redirect to home.
