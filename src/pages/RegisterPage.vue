@@ -124,7 +124,13 @@ const handleRegister = async () => {
     } else if (error.message) {
         errorMessage = error.message;
     }
-    console.error('Registration Error:', errorMessage);
+    console.error('Registration Error:', {
+      message: errorMessage,
+      status: error?.response?.status,
+      url: error?.config?.url,
+      method: error?.config?.method,
+      response: error?.response?.data,
+    });
   } finally {
     loading.value = false;
   }

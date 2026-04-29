@@ -25,11 +25,22 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null;
   }
 
+  function logApiError(context, error) {
+    console.error(`[AuthStore] ${context}`, {
+      message: error?.message,
+      status: error?.response?.status,
+      url: error?.config?.url,
+      method: error?.config?.method,
+      response: error?.response?.data,
+    });
+  }
+
   async function getCsrfCookie() {
     try {
       await api.get('/sanctum/csrf-cookie');
     } catch (error) {
-      console.error('Failed to get CSRF cookie', error);
+      logApiError('Failed to get CSRF cookie', error);
+      throw error;
     }
   }
 
@@ -39,7 +50,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await api.get('/api/user');
       setUser(data);
     } catch (error) {
-      console.error(error)
+      logApiError('Failed to fetch user', error);
       clearUser();
     }
   }
@@ -49,7 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
       await getCsrfCookie();
       await api.post('/api/logout');
     } catch (error) {
-      console.error('Failed to logout', error);
+      logApiError('Failed to logout', error);
     } finally {
       clearUser();
     }
@@ -60,7 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await api.put('/api/user/city', { city_id: cityId });
       setUser(data.user);
     } catch (error) {
-      console.error('Failed to update user city', error);
+      logApiError('Failed to update user city', error);
     }
   }
 
@@ -75,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
       });
       setUser(data.user); // Assuming the backend returns the updated user object
     } catch (error) {
-      console.error('Failed to upload avatar', error);
+      logApiError('Failed to upload avatar', error);
       throw error; // Re-throw to be handled by the component
     }
   }

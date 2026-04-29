@@ -70,7 +70,13 @@ const handleLogin = async () => {
     } else if (error.response?.data?.message) {
       errorMessage = error.response.data.message;
     }
-    console.error('Login Error:', errorMessage);
+    console.error('Login Error:', {
+      message: errorMessage,
+      status: error?.response?.status,
+      url: error?.config?.url,
+      method: error?.config?.method,
+      response: error?.response?.data,
+    });
   } finally {
     loading.value = false;
   }
