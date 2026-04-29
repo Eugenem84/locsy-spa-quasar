@@ -104,16 +104,9 @@ onMounted(() => {
 const handleRegister = async () => {
   loading.value = true;
   try {
-    // First, get the CSRF cookie. This is crucial for web routes.
     await api.get('/sanctum/csrf-cookie');
-
-    // Then, attempt to register using the web route.
     await api.post('/api/register', form.value);
-
-    // If registration is successful, you might want to automatically log the user in
-    // or redirect them to the login page. Here we redirect to home.
-    console.log('Registration successful! Please log in.');
-    router.push('/'); // Or '/login'
+    router.push('/');
 
   } catch (error) {
     let errorMessage = 'An error occurred during registration.';
