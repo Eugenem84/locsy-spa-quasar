@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { api } from 'boot/axios';
+import { api } from 'boot/axios'; // Импортируем настроенный экземпляр axios
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -23,6 +23,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   function clearUser() {
     user.value = null;
+    // Также очищаем токен из localStorage
+    localStorage.removeItem('access_token');
+    // Удаляем заголовок Authorization из axios по умолчанию
+    delete api.defaults.headers.common['Authorization'];
   }
 
   function logApiError(context, error) {
@@ -35,6 +39,19 @@ export const useAuthStore = defineStore('auth', () => {
     });
   }
 
+  /**
+   * Устанавливает токен аутентификации в localStorage и в заголовки axios.
+   * @param {string|null} token - Токен для установки. Если null, токен будет удален.
+   */
+  function setAuthToken(token) {
+    if (token) {
+      localStorage.setItem('access_token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      clearUser(); // Если токен не предоставлен, очищаем пользователя и токен
+    }
+  }
+
   async function getCsrfCookie() {
     try {
       await api.get('/sanctum/csrf-cookie');
@@ -45,13 +62,21 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchUser() {
+    // Перед запросом пользователя, убедимся, что токен установлен в заголовках axios
+    // Это особенно важно при перезагрузке страницы, когда store инициализируется заново
+    const token = localStorage.getItem('access_token');
+    if (token && !api.defaults.headers.common['Authorization']) {
+      setAuthToken(token); // Устанавливаем токен в заголовки axios, если он есть в localStorage, но не установлен
+    }
+
+    // Запрашиваем CSRF-куку, если она нужна для stateful-аутентификации
     await getCsrfCookie();
     try {
       const { data } = await api.get('/api/user');
       setUser(data);
     } catch (error) {
       logApiError('Failed to fetch user', error);
-      clearUser();
+      clearUser(); // Очищаем пользователя и токен, если запрос не удался (например, 401)
     }
   }
 
@@ -62,7 +87,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       logApiError('Failed to logout', error);
     } finally {
-      clearUser();
+      clearUser(); // Всегда очищаем пользователя и токен при выходе
     }
   }
 
@@ -91,16 +116,24 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // При инициализации хранилища, пытаемся загрузить токен из localStorage
+  // и установить его в заголовки axios
+  const initialToken = localStorage.getItem('access_token');
+  if (initialToken) {
+    setAuthToken(initialToken);
+  }
+
   return {
     user,
     isLoggedIn,
     userName,
     setUser,
     clearUser,
+    setAuthToken, // Экспортируем новое действие
     getCsrfCookie,
     fetchUser,
     handleLogout,
     updateUserCity,
-    uploadAvatar, // Export the new action
+    uploadAvatar,
   };
 });
