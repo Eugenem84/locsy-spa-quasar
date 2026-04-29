@@ -50,7 +50,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function handleLogout() {
     try {
-      await api.post('/logout');
+      await api.post('api/logout');
       clearUser();
     } catch (error) {
       console.error('Failed to logout', error);
