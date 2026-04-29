@@ -57,8 +57,18 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     await authStore.getCsrfCookie();
-    await api.post('/api/login', form.value);
+    // Захватываем ответ от сервера
+    const response = await api.post('/api/login', form.value);
 
+    // Извлекаем access_token из ответа
+    const token = response.data.access_token;
+
+    // Если токен получен, устанавливаем его через authStore
+    if (token) {
+      authStore.setAuthToken(token);
+    }
+
+    // Теперь fetchUser должен успешно получить данные пользователя, так как токен уже установлен
     await authStore.fetchUser();
 
     router.push('/');
