@@ -2,7 +2,10 @@ import { createYmaps } from 'vue-yandex-maps'
 
 export default async ({ app }) => {
   app.use( createYmaps({
-    apikey: '2e40d235-9d0b-4f1f-bc61-4a6a4c5cafec',
+    apikey: '71294a47-415d-480e-af7b-91393788b14c',
     lang: 'ru_RU',
+    scriptURLParameters: {
+      csp: '202512',
+    },
   }))
 }

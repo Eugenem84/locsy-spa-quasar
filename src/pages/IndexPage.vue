@@ -77,7 +77,7 @@
       </q-select>
     </div>
 
-    <MapView v-if="mapMode === 'map'" />
+    <YandexMapView v-if="mapMode === 'map'" />
     <ListView v-else />
 
     <!-- наш роутинг‑оверлей -->
@@ -102,7 +102,7 @@ import { useLocationStore } from "stores/location";
 
 const mapMode = ref('map')
 
-import MapView from 'components/MapView.vue'
+import YandexMapView from 'components/YandexMapView.vue'
 import LocationPage from 'pages/LocationPage.vue'
 import ListView from "components/ListView.vue";
 
