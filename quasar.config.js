@@ -1,7 +1,9 @@
 // Configuration for your app
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
-
+import { configure } from 'quasar/wrappers';
 import { defineConfig } from '#q-app/wrappers'
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 export default defineConfig((/* ctx */) => {
   return {
@@ -52,7 +54,9 @@ export default defineConfig((/* ctx */) => {
 
       // publicPath: '/',
       // analyze: true,
-      // env: {},
+      env: {
+        YANDEX_MAPS_API_KEY: process.env.YANDEX_MAPS_API_KEY
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
