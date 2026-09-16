@@ -122,7 +122,16 @@ async function toggleFavorite(location) {
             <div class="text-h6 text-weight-medium">{{ location.name }}</div>
           </q-card-section>
 
-          <q-scroll-area horizontal style="height: 160px; width: 100%;" @click="selectLocation(location)" class="cursor-pointer">
+          <div
+            v-if="!location.photos || location.photos.length === 0"
+            class="q-mx-md bg-grey-3 text-grey-8 row flex-center rounded-borders"
+            style="height: 120px"
+            @click="selectLocation(location)"
+          >
+            Нет фото
+          </div>
+
+          <q-scroll-area v-else horizontal style="height: 160px; width: 100%;" @click="selectLocation(location)" class="cursor-pointer">
             <div class="row no-wrap q-gutter-sm q-px-md">
               <q-img
                 v-for="photo in location.photos"
@@ -131,13 +140,7 @@ async function toggleFavorite(location) {
                 class="rounded-borders"
                 spinner-color="grey-5"
                 style="width: 250px; height: 150px;"
-              >
-                <template v-if="!location.photos || location.photos.length === 0">
-                  <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
-                    Нет фото
-                  </div>
-                </template>
-              </q-img>
+              />
             </div>
           </q-scroll-area>
 

@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../locsy-laravel-backend"
+		}
+	],
+	"settings": {}
+}

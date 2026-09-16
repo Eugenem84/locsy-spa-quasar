@@ -16,14 +16,10 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.16.4",
-    "@vue-leaflet/vue-leaflet": "^0.10.1",
-    "@yandex/ymaps3-default-ui-theme": "^0.0.19",
     "axios": "^1.2.1",
-    "leaflet": "^1.9.4",
     "pinia": "^3.0.1",
     "quasar": "^2.16.0",
     "vue": "^3.4.18",
-    "vue-leaflet": "^0.1.0",
     "vue-router": "^4.0.0",
     "vue-yandex-maps": "^2.1.8"
   },

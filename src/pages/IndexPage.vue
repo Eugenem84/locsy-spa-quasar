@@ -22,7 +22,7 @@
       </q-btn-toggle>
     </div>
 
-    <div class="absolute-top-left q-pa-sm" style="z-index:1000; margin-left: 50px;">
+    <div class="absolute-top-left q-pa-sm filters-panel">
       <q-select
         dark
         filled
@@ -79,39 +79,21 @@
 
     <YandexMapView v-if="mapMode === 'map'" />
     <ListView v-else />
-
-    <!-- наш роутинг‑оверлей -->
-    <q-dialog v-model="dialogOpen"
-              persistent
-    >
-      <q-card style="min-width: 90vw; min-height: 90vh">
-        <LocationPage
-          :id="locationId"
-          @close="closeDialog"
-        />
-      </q-card>
-    </q-dialog>
   </q-page>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useCategoryStore } from "stores/category";
 import { useLocationStore } from "stores/location";
 
 const mapMode = ref('map')
 
 import YandexMapView from 'components/YandexMapView.vue'
-import LocationPage from 'pages/LocationPage.vue'
 import ListView from "components/ListView.vue";
 
-const router = useRouter()
 const categoryStore = useCategoryStore();
 const locationStore = useLocationStore();
-
-const dialogOpen = ref(false)
-const locationId = ref(null)
 
 const selectorStyle = computed(() => {
   const style = {
@@ -141,12 +123,6 @@ const selectorLabel = computed(() => {
 //     dialogOpen.value = false
 //   }
 // })
-
-// закрыть и вернуться на карту
-function closeDialog() {
-  router.push({ name: 'Map' })
-  router.push({path: '/'})
-}
 
 onMounted(async () => {
   await categoryStore.fetchCategories();
@@ -194,3 +170,17 @@ const categoryDisplayValue = computed(() => {
   return `${count} категорий выбрано`;
 });
 </script>
+
+<style scoped>
+.filters-panel {
+  z-index: 1000;
+  margin-left: 50px;
+}
+
+@media (max-width: 599px) {
+  .filters-panel {
+    margin-left: 0;
+    margin-top: 52px;
+  }
+}
+</style>

@@ -39,6 +39,11 @@ function goBack() {
   router.back()
 }
 
+function descriptionPreview(description) {
+  if (!description) return 'Без описания'
+  return description.length > 100 ? `${description.substring(0, 100)}…` : description
+}
+
 async function removeFromFavorites(location) {
   const locationId = location.id;
   try {
@@ -85,8 +90,17 @@ async function removeFromFavorites(location) {
         </div>
 
         <div @click="goToLocation(location.id)" class="cursor-pointer">
+          <div
+            v-if="!location.photos || location.photos.length === 0"
+            class="row flex-center bg-grey-3 text-grey-8"
+            style="aspect-ratio: 4 / 3"
+          >
+            Нет фото
+          </div>
+
           <q-img
-            :src="location.photos.length > 0 ? location.photos[0].full_url : 'https://via.placeholder.com/300'"
+            v-else
+            :src="location.photos[0].full_url"
             :ratio="4/3"
             class="location-card-image"
           >
@@ -103,7 +117,7 @@ async function removeFromFavorites(location) {
 
           <q-card-section>
             <div class="text-h6 text-weight-bold">{{ location.name }}</div>
-            <div class="text-caption text-grey">{{ location.description.substring(0, 100) }}...</div>
+            <div class="text-caption text-grey">{{ descriptionPreview(location.description) }}</div>
           </q-card-section>
         </div>
       </q-card>

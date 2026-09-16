@@ -182,7 +182,34 @@ function goBack() {
 
       <!-- Сетка фотографий -->
       <q-scroll-area :style="{ height: '70vh' }" class="q-mb-md">
-        <div class="photo-grid q-pa-md">
+        <div
+          v-if="photoGallery.length === 0"
+          class="column flex-center q-pa-xl text-center text-grey-7"
+        >
+          <q-icon name="photo_library" size="48px" color="grey-5" />
+          <div class="text-body1 q-mt-sm">Здесь пока нет фотографий</div>
+          <div class="text-caption q-mb-md">
+            Станьте первым — загрузите свои снимки этого места
+          </div>
+          <q-btn
+            v-if="authStore.isLoggedIn"
+            color="primary"
+            no-caps
+            icon="add_a_photo"
+            label="Добавить фото"
+            @click="addPhoto"
+          />
+          <q-btn
+            v-else
+            color="primary"
+            no-caps
+            icon="login"
+            label="Войти и добавить фото"
+            to="/login"
+          />
+        </div>
+
+        <div v-else class="photo-grid q-pa-md">
           <div
             v-for="(photo, index) in photoGallery"
             :key="photo.id"

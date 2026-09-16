@@ -55,7 +55,12 @@ export default defineConfig((/* ctx */) => {
       // publicPath: '/',
       // analyze: true,
       env: {
-        YANDEX_MAPS_API_KEY: process.env.YANDEX_MAPS_API_KEY
+        // Ключ Геокодера (используется в обратном геокодировании адресов)
+        YANDEX_MAPS_API_KEY: process.env.YANDEX_MAPS_API_KEY,
+        // Ключ JavaScript API 3 — именно он рисует карту.
+        // Отдельная переменная, чтобы его нельзя было случайно подменить ключом Геокодера.
+        YANDEX_MAPS_JS_API_KEY:
+          process.env.YANDEX_MAPS_JS_API_KEY || '71294a47-415d-480e-af7b-91393788b14c'
       },
       // rawDefine: {}
       // ignorePublicFolder: true,

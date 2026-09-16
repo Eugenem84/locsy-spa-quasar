@@ -3,7 +3,10 @@ import axios from 'axios'
 
 // Create a configured instance of Axios
 const api = axios.create({
-  baseURL: process.env.DEV ? 'http://localhost/' : 'https://locsy.prod.medovf2h.beget.tech/',
+  // Относительный базовый URL: SPA и API живут на одном домене,
+  // внешний nginx/Caddy проксирует /api, /sanctum, /storage, /admin в Laravel.
+  // Так сборка не зависит от конкретного домена (dev/prod/локальный стенд).
+  baseURL: '/',
   withCredentials: true,
 });
 

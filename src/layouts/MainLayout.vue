@@ -1,132 +1,103 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated v-if="$route.name !== 'Location' && $route.name !== 'PhotographerProfile'" class="bg-gradient-primary">
-      <q-toolbar>
-<!--        <q-btn-->
-<!--          flat-->
-<!--          dense-->
-<!--          round-->
-<!--          icon="menu"-->
-<!--          aria-label="Menu"-->
-<!--          @click="toggleLeftDrawer"-->
-<!--        />-->
+    <q-header
+      v-if="$route.name !== 'Location' && $route.name !== 'PhotographerProfile'"
+      elevated
+      class="bg-gradient-primary"
+    >
+      <q-toolbar class="q-py-sm">
+        <router-link to="/" class="row items-center no-wrap">
+          <q-img src="/logo/logo.png" style="height: 44px; width: 132px" fit="contain" />
+        </router-link>
 
-        <q-toolbar-title сд>
-          <router-link to="/">
-            <q-img src="/logo/logo.png" style="height: 50px; width: 150px" fit="contain" />
-          </router-link>
-        </q-toolbar-title>
-
-        <div class="q-pa-md">
-          <q-select
-            filled
-            dark
-            color="accent"
-            style="width: 300px"
-            v-model="cityStore.selectedCity"
-            :options="cityStore.cities"
-            label="Выберите город"
-            dense
-            clearable
-            @popup-show="() => cityStore.fetchCities()"
-          >
-            <template v-slot:before-options>
-              <q-item>
-                <q-item-section>
-                  <q-input
-                    dense
-                    autofocus
-                    color="white"
-                    input-style="color: white"
-                    placeholder="Поиск..."
-                    @update:model-value="val => cityStore.fetchCities(val)"
-                    debounce="300"
-                  />
-                </q-item-section>
-              </q-item>
-            </template>
-            <template v-slot:no-option>
-              <q-item>
-                <q-item-section class="text-grey">
-                  Город не найден
-                </q-item-section>
-              </q-item>
-            </template>
-          </q-select>
+        <div class="row items-center q-ml-md gt-xs">
+          <q-btn flat dense no-caps icon="explore" label="Карта" to="/" />
+          <q-btn flat dense no-caps icon="info" label="О проекте" to="/about" />
         </div>
+        <q-btn class="lt-sm q-ml-sm" flat dense round icon="info" to="/about" aria-label="О проекте" />
 
-        <!-- User Info Section -->
-        <div v-if="authStore.isLoggedIn" class="q-ml-md">
-          <q-btn-dropdown flat>
+        <q-space />
+
+        <q-select
+          v-model="cityStore.selectedCity"
+          :options="cityStore.cities"
+          option-label="name"
+          label="Город"
+          dense
+          outlined
+          dark
+          clearable
+          class="city-select q-mr-sm"
+          @popup-show="() => cityStore.fetchCities()"
+        >
+          <template v-slot:before-options>
+            <q-item>
+              <q-item-section>
+                <q-input
+                  dense
+                  autofocus
+                  color="white"
+                  input-style="color: white"
+                  placeholder="Поиск города..."
+                  debounce="300"
+                  @update:model-value="(val) => cityStore.fetchCities(val)"
+                />
+              </q-item-section>
+            </q-item>
+          </template>
+          <template v-slot:no-option>
+            <q-item>
+              <q-item-section class="text-grey">Город не найден</q-item-section>
+            </q-item>
+          </template>
+        </q-select>
+
+        <div v-if="authStore.isLoggedIn">
+          <q-btn-dropdown flat no-caps>
             <template v-slot:label>
               <div class="row items-center no-wrap">
-                <div style="border: 2px solid #EA580C; border-radius: 50%; padding: 2px; display: inline-block;" class="q-mr-sm">
-                  <q-avatar size="32px">
-                    <img v-if="authStore.user && authStore.user.avatar" :src="authStore.user.avatar">
-                    <q-icon v-else name="account_circle" />
-                  </q-avatar>
-                </div>
-<!--                {{ authStore.userName }}-->
+                <q-avatar size="32px" class="avatar-ring">
+                  <img v-if="authStore.user?.avatar" :src="authStore.user.avatar" />
+                  <q-icon v-else name="account_circle" />
+                </q-avatar>
               </div>
             </template>
-            <q-list>
+            <q-list style="min-width: 220px">
+              <q-item-label header class="text-grey-7">
+                {{ authStore.userName || 'Профиль' }}
+              </q-item-label>
               <q-item clickable v-close-popup to="/favorites">
-                <q-item-section>
-                  <q-item-label>Избранное</q-item-label>
-                </q-item-section>
+                <q-item-section avatar><q-icon name="favorite" /></q-item-section>
+                <q-item-section><q-item-label>Избранное</q-item-label></q-item-section>
               </q-item>
               <q-item clickable v-close-popup @click="openCreateLocationDialog">
-                <q-item-section>
-                  <q-item-label>Добавить локацию</q-item-label>
-                </q-item-section>
+                <q-item-section avatar><q-icon name="add_location_alt" /></q-item-section>
+                <q-item-section><q-item-label>Добавить локацию</q-item-label></q-item-section>
+              </q-item>
+              <q-item v-if="authStore.isPhotographer" clickable v-close-popup @click="openSelfPage">
+                <q-item-section avatar><q-icon name="camera_alt" /></q-item-section>
+                <q-item-section><q-item-label>Моя страница</q-item-label></q-item-section>
               </q-item>
               <q-item clickable @click="profileModalOpen = true">
-                <q-item-section>
-                  <q-item-label>Профиль</q-item-label>
-                </q-item-section>
+                <q-item-section avatar><q-icon name="manage_accounts" /></q-item-section>
+                <q-item-section><q-item-label>Профиль и материалы</q-item-label></q-item-section>
               </q-item>
-              <q-item clickable @click="openSelfPage">
-                <q-item-section>
-                  <q-item-label>Моя страница</q-item-label>
-                </q-item-section>
-              </q-item>
-              <q-item clickable v-close-popup @click="authStore.handleLogout">
-                <q-item-section>
-                  <q-item-label>Выход</q-item-label>
-                </q-item-section>
+              <q-separator />
+              <q-item clickable v-close-popup @click="logout">
+                <q-item-section avatar><q-icon name="logout" /></q-item-section>
+                <q-item-section><q-item-label>Выход</q-item-label></q-item-section>
               </q-item>
             </q-list>
           </q-btn-dropdown>
         </div>
-        <div v-else class="q-ml-md">
-          <q-btn flat label="Войти" to="/login" class="q-mr-sm" />
-          <q-btn outline label="Регистрация" to="/register" />
+        <div v-else class="row no-wrap items-center">
+          <q-btn flat no-caps label="Войти" to="/login" />
+          <q-btn outline no-caps label="Регистрация" to="/register" class="q-ml-sm gt-xs" />
         </div>
-
       </q-toolbar>
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      overlay
-      bordered
-    >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
-
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
-      </q-list>
-    </q-drawer>
-
-    <q-page-container @click="leftDrawerOpen = false">
+    <q-page-container>
       <router-view />
     </q-page-container>
 
@@ -137,97 +108,58 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
+import { ref, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useCityStore } from 'stores/city.js'
+import { useAuthStore } from 'stores/auth-store'
 import UserProfile from 'components/UserProfile.vue'
-import { useCityStore} from "stores/city.js";
-import { useAuthStore } from "stores/auth-store";
-import { useRouter } from 'vue-router';
 
-const router = useRouter();
+const router = useRouter()
 const cityStore = useCityStore()
-const authStore = useAuthStore();
-const profileModalOpen = ref(false);
+const authStore = useAuthStore()
+const profileModalOpen = ref(false)
 
 function openCreateLocationDialog() {
-  console.log('MainLayout: Нажата кнопка "Добавить локацию", меняю URL на /?picking=true');
-  router.push({ path: '/', query: { picking: 'true' } });
+  router.push({ path: '/', query: { picking: 'true' } })
 }
 
 function openSelfPage() {
   if (authStore.user) {
-    router.push({ name: 'PhotographerProfile', params: { id: authStore.user.id } });
+    router.push({ name: 'PhotographerProfile', params: { id: authStore.user.id } })
   }
 }
 
-// Try to fetch user on component mount to check for existing session
+async function logout() {
+  await authStore.handleLogout()
+  router.push('/')
+}
+
 onMounted(async () => {
-  await authStore.fetchUser();
-  await cityStore.fetchCities();
-});
+  await authStore.fetchUser()
+  await cityStore.fetchCities()
+})
 
-watch(() => authStore.user, (newUser) => {
-  if (newUser && newUser.city_id && cityStore.cities.length) {
-    const userCity = cityStore.cities.find(c => c.id === newUser.city_id);
-    if (userCity) {
-      cityStore.setSelectedCity(userCity);
-    }
-  }
-}, { immediate: true });
+// Подставляем город пользователя, когда загрузились и он сам, и справочник городов
+function applyUserCity() {
+  const userCityId = authStore.user?.city_id
+  if (!userCityId || !cityStore.cities.length) return
+  const userCity = cityStore.cities.find((c) => c.id === userCityId)
+  if (userCity) cityStore.setSelectedCity(userCity)
+}
 
-
-const linksList = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-]
-
-const leftDrawerOpen = ref(false)
-
-// function toggleLeftDrawer () {
-//   leftDrawerOpen.value = !leftDrawerOpen.value
-// }
+watch(() => [authStore.user, cityStore.cities.length], applyUserCity, { immediate: true })
 </script>
 
-<style>
+<style scoped>
+.city-select {
+  width: 100%;
+  min-width: 150px;
+  max-width: 280px;
+}
 
+.avatar-ring {
+  border: 2px solid #ea580c;
+  border-radius: 50%;
+  padding: 2px;
+}
 </style>

@@ -10,6 +10,7 @@
     :class="{ 'picking-mode': isPickingMode }"
     @update="fetchLocations"
     @click="handleMapClick"
+    @ready="onMapReady"
   >
     <YandexMapDefaultSchemeLayer />
     <YandexMapDefaultFeaturesLayer>
@@ -85,7 +86,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { useCityStore } from 'stores/city.js'
 import { useLocationStore } from "stores/location.js";
 import { useAuthStore } from "stores/auth-store";
@@ -108,6 +109,7 @@ const authStore = useAuthStore();
 const $q = useQuasar();
 
 const mapRef = ref(null);
+const isMapReady = ref(false);
 const locations = computed(() => locationStore.locations);
 const pickingNotification = ref(null);
 const createLocationDialogOpen = ref(false);
@@ -132,13 +134,17 @@ const mapCenter = computed(() => {
 })
 
 const doFetchLocations = async () => {
-  if (!mapRef.value?.map) return;
-  const boundsRaw = await mapRef.value.map.getBounds();
-  const bounds = [
-      [boundsRaw[0][1], boundsRaw[0][0]],
-      [boundsRaw[1][1], boundsRaw[1][0]]
-  ];
-  await locationStore.fetchLocationsByBounds(bounds);
+  if (!isMapReady.value || !mapRef.value) return;
+  try {
+    const boundsRaw = await mapRef.value.getBounds();
+    const bounds = [
+        [boundsRaw[0][1], boundsRaw[0][0]],
+        [boundsRaw[1][1], boundsRaw[1][0]]
+    ];
+    await locationStore.fetchLocationsByBounds(bounds);
+  } catch (e) {
+    console.error("Failed to fetch locations by bounds:", e);
+  }
 };
 
 const fetchLocations = debounce(doFetchLocations, 300);
@@ -158,11 +164,10 @@ async function initializeMap() {
   await doFetchLocations();
 }
 
-watch(mapRef, (newMap) => {
-  if (newMap) {
-    initializeMap();
-  }
-});
+function onMapReady() {
+  isMapReady.value = true;
+  initializeMap();
+}
 
 watch(isPickingMode, (isPicking) => {
   if (isPicking) {
@@ -200,14 +205,27 @@ function handleEscKey(event) {
   }
 }
 
-function handleMapClick(event) {
+async function handleMapClick(event) {
   if (isPickingMode.value) {
     if (pickingNotification.value) {
       pickingNotification.value();
       pickingNotification.value = null;
     }
-    newLocationCoords.value = event.coordinates;
-    createLocationDialogOpen.value = true;
+
+    if (isMapReady.value && mapRef.value && typeof event.clientX === 'number' && typeof event.clientY === 'number') {
+      try {
+        const coords = await mapRef.value.screenToWorld({ x: event.clientX, y: event.clientY });
+
+        if (coords) {
+          newLocationCoords.value = coords;
+          nextTick(() => {
+            createLocationDialogOpen.value = true;
+          });
+        }
+      } catch (e) {
+        console.error('Error calling screenToWorld:', e);
+      }
+    }
   }
 }
 
@@ -215,6 +233,8 @@ function onDialogHide() {
   if (isPickingMode.value) {
     router.push({ path: '/' });
   }
+  // Сбрасываем координаты после закрытия диалога
+  newLocationCoords.value = null;
 }
 
 function onLocationCreated() {
@@ -304,8 +324,8 @@ function onMarkerMouseOut() {
 
 
 watch(() => cityStore.selectedCity, (newCity) => {
-  if (newCity && mapRef.value?.map) {
-    mapRef.value.map.setLocation({
+  if (newCity && isMapReady.value && mapRef.value) {
+    mapRef.value.setLocation({
       center: [newCity.coords[1], newCity.coords[0]],
       zoom: 12
     });

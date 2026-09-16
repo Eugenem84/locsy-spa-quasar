@@ -14,6 +14,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
     return user.value?.name;
   });
+  const isPhotographer = computed(() => !!user.value?.is_photographer);
 
   // Actions
   function setUser(newUser) {
@@ -116,6 +117,53 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Регистрация. Роль ('user' | 'photographer') определяет, создаётся ли
+   * сразу профиль фотографа с портфолио.
+   */
+  async function register(payload) {
+    await getCsrfCookie();
+    const { data } = await api.post('/api/register', payload);
+
+    if (data?.access_token) {
+      setAuthToken(data.access_token);
+    }
+    if (data?.user) {
+      setUser(data.user);
+    } else {
+      await fetchUser();
+    }
+
+    return data;
+  }
+
+  /**
+   * Сохранение профиля фотографа (в том числе апгрейд из обычного пользователя).
+   */
+  async function updatePhotographerProfile(payload) {
+    const { data } = await api.put('/api/user/photographer-profile', payload);
+    if (data?.user) {
+      setUser(data.user);
+    }
+    return data;
+  }
+
+  /**
+   * Мои локации со статусом модерации.
+   */
+  async function fetchMyLocations() {
+    const { data } = await api.get('/api/user/locations');
+    return data;
+  }
+
+  /**
+   * Мои фотографии со статусом модерации и причиной отказа.
+   */
+  async function fetchMyPhotos() {
+    const { data } = await api.get('/api/user/photos');
+    return data;
+  }
+
   // При инициализации хранилища, пытаемся загрузить токен из localStorage
   // и установить его в заголовки axios
   const initialToken = localStorage.getItem('access_token');
@@ -127,6 +175,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isLoggedIn,
     userName,
+    isPhotographer,
     setUser,
     clearUser,
     setAuthToken, // Экспортируем новое действие
@@ -135,5 +184,9 @@ export const useAuthStore = defineStore('auth', () => {
     handleLogout,
     updateUserCity,
     uploadAvatar,
+    register,
+    updatePhotographerProfile,
+    fetchMyLocations,
+    fetchMyPhotos,
   };
 });

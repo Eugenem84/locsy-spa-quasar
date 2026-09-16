@@ -181,6 +181,16 @@ async function submitForm() {
         offset: [0, 50],
         actions: [{ label: 'OK', color: 'white' }]
       });
+    } else if (response && response.photos_need_moderation) {
+      $q.notify({
+        color: 'positive',
+        icon: 'check',
+        message: 'Локация создана! Фотографии появятся после проверки модератором.',
+        position: 'center',
+        timeout: 4000,
+      });
+      // Локация уже опубликована, обновляем список
+      await locationStore.fetchLocationsForList(cityStore.selectedCity.id);
     } else {
       $q.notify({
         color: 'positive',

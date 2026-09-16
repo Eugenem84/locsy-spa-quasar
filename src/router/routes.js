@@ -1,6 +1,3 @@
-import LocationPage from "pages/LocationPage.vue";
-import PhotographerProfilePage from "pages/PhotographerProfilePage.vue";
-
 const routes = [
   {
     path: '/',
@@ -8,15 +5,20 @@ const routes = [
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') },
       {
+        path: '/about',
+        name: 'About',
+        component: () => import('pages/AboutPage.vue')
+      },
+      {
         path: '/location/:id',
         name: 'Location',
-        component: LocationPage,
+        component: () => import('pages/LocationPage.vue'),
         props: true
       },
       {
         path: '/photographer/:id',
         name: 'PhotographerProfile',
-        component: PhotographerProfilePage,
+        component: () => import('pages/PhotographerProfilePage.vue'),
         props: true
       },
       {

@@ -6,16 +6,23 @@ import { api } from 'boot/axios'
 export const useCityStore = defineStore('city', () => {
   const cities = ref([])
   const selectedCity = ref(null)
+  // Идентификатор последнего запроса: защищает от гонок при быстром поиске
+  let lastRequestId = 0
 
   function setSelectedCity(city) {
     selectedCity.value = city;
   }
 
   async function fetchCities(search = '') {
+    const requestId = ++lastRequestId
     try {
       const { data } = await api.get('/api/cities', {
         params: { search }
       });
+
+      // Устаревший ответ (пользователь уже ввёл другой запрос) игнорируем
+      if (requestId !== lastRequestId) return
+
       cities.value = data.map(city => ({
         ...city,
         label: city.name,
