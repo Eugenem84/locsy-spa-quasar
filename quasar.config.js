@@ -89,7 +89,23 @@ export default defineConfig((/* ctx */) => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
     devServer: {
       // https: true,
-      open: true // opens browser window automatically
+      open: true, // opens browser window automatically
+
+      // Локальный бэкенд слушает http://localhost:80 (сервис nginx из
+      // locsy-laravel-backend/docker-compose.yml) и разводит /api/ и /sanctum/ в Laravel.
+      // Без прокси dev-сервер отвечает на эти пути своим SPA-fallback (index.html),
+      // и фронт получает HTML вместо JSON («data.map is not a function»).
+      //
+      // Со стороны бэкенда то же самое уже настроено в его .env:
+      //   FRONTEND_URL=http://localhost:9000
+      //   SANCTUM_STATEFUL_DOMAINS=localhost:9000
+      proxy: {
+        // changeOrigin не включаем: запрос уходит с исходным Host (localhost:9000),
+        // поэтому Laravel формирует ссылки на /storage/... тем же origin'ом,
+        // с которого пришёл запрос, и они попадают обратно в этот прокси.
+        '/api': { target: 'http://localhost' },
+        '/sanctum': { target: 'http://localhost' }
+      }
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework

@@ -27,7 +27,8 @@ export const useCityStore = defineStore('city', () => {
         ...city,
         label: city.name,
         value: city.slug,
-        coords: [city.latitude, city.longitude]
+        // Координаты из API приходят строками (в БД DECIMAL), а ymaps3 ждёт числа.
+        coords: [Number(city.latitude), Number(city.longitude)]
       }))
     } catch (error) {
       console.error('Error fetching cities:', error)

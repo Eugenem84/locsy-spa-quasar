@@ -1,6 +1,6 @@
 <template>
   <YandexMap
-    ref="mapRef"
+    v-model="mapInstance"
     height="92vh"
     width="100%"
     :settings="{
@@ -8,28 +8,21 @@
       showScaleInCopyrights: true,
     }"
     :class="{ 'picking-mode': isPickingMode }"
-    @update="fetchLocations"
-    @click="handleMapClick"
-    @ready="onMapReady"
   >
+    <!--
+      События карты идут не через <YandexMap> (у компонента нет emits click/update),
+      а через YandexMapListener из vue-yandex-maps.
+    -->
+    <YandexMapListener :settings="mapListenerSettings" />
     <YandexMapDefaultSchemeLayer />
-    <YandexMapDefaultFeaturesLayer>
-        <YandexMapMarker
-            v-for="location in locations"
-            :key="location.id"
-            :settings="{ coordinates: [location.longitude, location.latitude] }"
-            @click.stop="openLocationModal(location)"
-            @mouseover="onMarkerMouseOver(location)"
-            @mouseout="onMarkerMouseOut"
-        >
-            <div class="custom-marker" :style="getMarkerStyle(location)">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" :fill="getMarkerColor(location)">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
-                </svg>
-                <div class="tooltip">{{ location.name }}</div>
-            </div>
-        </YandexMapMarker>
-    </YandexMapDefaultFeaturesLayer>
+    <!--
+      Слой объектов нужен ymaps3, чтобы отрисовать маркеры.
+      Сами маркеры создаём императивно через ymaps3 (см. syncMarkers):
+      компонент <YandexMapMarker> из vue-yandex-maps 2.3.2 после создания маркера
+      удаляет его DOM — проверка closest("ymaps") не находит тег "ymaps3",
+      которым рендерит карту современный JS API. В итоге маркеров не видно.
+    -->
+    <YandexMapDefaultFeaturesLayer />
   </YandexMap>
 
   <!-- Location Detail Modal -->
@@ -86,7 +79,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted, nextTick } from 'vue'
+import { computed, ref, shallowRef, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useCityStore } from 'stores/city.js'
 import { useLocationStore } from "stores/location.js";
 import { useAuthStore } from "stores/auth-store";
@@ -95,7 +88,7 @@ import {
   YandexMap,
   YandexMapDefaultSchemeLayer,
   YandexMapDefaultFeaturesLayer,
-  YandexMapMarker,
+  YandexMapListener,
 } from 'vue-yandex-maps'
 import { debounce, useQuasar } from 'quasar';
 import CreateLocationForm from "components/CreateLocationForm.vue";
@@ -108,8 +101,15 @@ const locationStore = useLocationStore();
 const authStore = useAuthStore();
 const $q = useQuasar();
 
-const mapRef = ref(null);
-const isMapReady = ref(false);
+// Объект карты ymaps3 (YMap). Компонент <YandexMap> отдаёт его через v-model —
+// только у него есть геттеры bounds/center/zoom и метод setLocation.
+//
+// ВАЖНО: именно shallowRef, а не ref. Обычный ref заворачивает объект в
+// реактивный Proxy, а YMap внутри читает приватные поля (#…) — через Proxy это
+// падает с «Cannot read private member from an object whose class did not declare it»
+// на первом же обращении к map.bounds.
+const mapInstance = shallowRef(null);
+let mapInitialized = false;
 const locations = computed(() => locationStore.locations);
 const pickingNotification = ref(null);
 const createLocationDialogOpen = ref(false);
@@ -119,27 +119,31 @@ const selectedLocation = computed(() => locationStore.selectedLocation);
 const selectedLocationAddress = ref('');
 const modalOpen = ref(false);
 const favorites = ref([]);
-const hoveredLocationId = ref(null);
+// Маркеры, созданные вручную через ymaps3: id локации -> { marker, element }.
+const mapMarkers = new Map();
 
 
 const isPickingMode = computed(() => route.query.picking === 'true');
 
-/** Yandex Maps 3: [долгота, широта]. В store coords — [широта, долгота] для Leaflet. */
+/** Yandex Maps 3: [долгота, широта]. Номерные координаты приходят из cityStore. */
 const mapCenter = computed(() => {
   const coords = cityStore.selectedCity?.coords
-  if (coords?.length === 2) {
+  if (coords?.length === 2 && coords.every(Number.isFinite)) {
     return [coords[1], coords[0]]
   }
   return [37.618423, 55.751244]
 })
 
 const doFetchLocations = async () => {
-  if (!isMapReady.value || !mapRef.value) return;
+  const map = mapInstance.value;
+  if (!map) return;
   try {
-    const boundsRaw = await mapRef.value.getBounds();
+    // map.bounds в ymaps3 — [[запад, север], [восток, юг]] (левый верх и правый низ).
+    // Стор и API (/api/locations/by-bounds) ждут [[широта, долгота], ...].
+    const [[west, north], [east, south]] = map.bounds;
     const bounds = [
-        [boundsRaw[0][1], boundsRaw[0][0]],
-        [boundsRaw[1][1], boundsRaw[1][0]]
+      [south, west],
+      [north, east],
     ];
     await locationStore.fetchLocationsByBounds(bounds);
   } catch (e) {
@@ -148,6 +152,13 @@ const doFetchLocations = async () => {
 };
 
 const fetchLocations = debounce(doFetchLocations, 300);
+
+// Слушатель событий карты: в vue-yandex-maps события подписываются
+// через YandexMapListener, а не через emits компонента <YandexMap>.
+const mapListenerSettings = {
+  onClick: handleMapClick,
+  onUpdate: fetchLocations,
+};
 
 async function fetchFavorites() {
   if (!authStore.isLoggedIn) return;
@@ -160,14 +171,42 @@ async function fetchFavorites() {
 }
 
 async function initializeMap() {
+  // Карта считается готовой, когда пришёл её объект (v-model). Один раз на монтирование.
+  if (mapInitialized || !mapInstance.value) return;
+  mapInitialized = true;
+
   await fetchFavorites();
   await doFetchLocations();
+  syncMarkers();
+
+  // Быстрая диагностика в консоли браузера: сколько локаций пришло и сколько маркеров нарисовано.
+  if (import.meta.env.DEV) {
+    console.debug(
+      '[Locsy] локаций на карте: %d, маркеров отрисовано: %d',
+      locations.value.length,
+      mapMarkers.size
+    );
+  }
 }
 
-function onMapReady() {
-  isMapReady.value = true;
-  initializeMap();
-}
+// Компонент <YandexMap> не эмитит событие ready — объект карты он отдаёт через
+// v-model сразу после new ymaps3.YMap(...). Этот момент и есть готовность карты.
+watch(mapInstance, (map) => {
+  if (map) initializeMap();
+});
+
+// Список локаций обновился (первая загрузка или смена города) — перерисовываем маркеры.
+watch(locations, () => syncMarkers());
+
+// «Избранное» влияет на цвет пина — обновляем вид, не пересоздавая маркеры.
+watch(favorites, () => {
+  mapMarkers.forEach(({ element }, id) => {
+    const location = locations.value.find((item) => item.id === id);
+    if (location) applyMarkerAppearance(location, element, false);
+  });
+});
+
+onBeforeUnmount(() => removeAllMarkers());
 
 watch(isPickingMode, (isPicking) => {
   if (isPicking) {
@@ -205,27 +244,27 @@ function handleEscKey(event) {
   }
 }
 
-async function handleMapClick(event) {
-  if (isPickingMode.value) {
-    if (pickingNotification.value) {
-      pickingNotification.value();
-      pickingNotification.value = null;
-    }
+/**
+ * Клик по карте. Обработчик вешается через YandexMapListener, поэтому получает
+ * аргументы ymaps3: сущность под курсором и событие с готовыми координатами.
+ *
+ * @param {object|undefined} object Сущность карты под курсором (или undefined).
+ * @param {{ coordinates: [number, number] }} event Координаты клика: [долгота, широта].
+ */
+function handleMapClick(object, event) {
+  if (!isPickingMode.value) return;
 
-    if (isMapReady.value && mapRef.value && typeof event.clientX === 'number' && typeof event.clientY === 'number') {
-      try {
-        const coords = await mapRef.value.screenToWorld({ x: event.clientX, y: event.clientY });
+  if (pickingNotification.value) {
+    pickingNotification.value();
+    pickingNotification.value = null;
+  }
 
-        if (coords) {
-          newLocationCoords.value = coords;
-          nextTick(() => {
-            createLocationDialogOpen.value = true;
-          });
-        }
-      } catch (e) {
-        console.error('Error calling screenToWorld:', e);
-      }
-    }
+  const coords = event?.coordinates;
+  if (Array.isArray(coords) && coords.length === 2) {
+    newLocationCoords.value = [...coords];
+    nextTick(() => {
+      createLocationDialogOpen.value = true;
+    });
   }
 }
 
@@ -304,28 +343,91 @@ function getMarkerColor(location) {
   return favorites.value.includes(location.id) ? favoriteMarkerColor : defaultMarkerColor;
 }
 
-function getMarkerStyle(location) {
-    const isHovered = hoveredLocationId.value === location.id;
-    const size = isHovered ? 48 : 36;
-    return {
-        width: `${size}px`,
-        height: `${size}px`,
-        transform: `translate(-${size / 2}px, -${size}px)`,
-    };
+// Путь иконки пина — тот же, что раньше был в разметке маркера.
+const MARKER_ICON_PATH =
+  'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z';
+
+/**
+ * Внешний вид маркера: размер зависит от наведения, цвет — от «избранного».
+ */
+function applyMarkerAppearance(location, element, hovered) {
+  const size = hovered ? 48 : 36;
+  element.style.width = `${size}px`;
+  element.style.height = `${size}px`;
+  element.style.transform = `translate(-${size / 2}px, -${size}px)`;
+
+  const icon = element.querySelector('svg');
+  if (icon) icon.setAttribute('fill', getMarkerColor(location));
 }
 
-function onMarkerMouseOver(location) {
-  hoveredLocationId.value = location.id;
+/**
+ * DOM маркера: пин + подсказка с названием локации.
+ *
+ * Маркеры создаём императивно через ymaps3, потому что компонент
+ * <YandexMapMarker> из vue-yandex-maps 2.3.2 после создания маркера удаляет его
+ * DOM: он проверяет closest("ymaps"), а современный JS API рендерит тег
+ * "ymaps3". В итоге через этот компонент маркеры на карте не отображаются.
+ */
+function createMarkerElement(location) {
+  const element = document.createElement('div');
+  element.className = 'custom-marker';
+  element.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="${MARKER_ICON_PATH}"></path></svg><div class="tooltip"></div>`;
+
+  const tooltip = element.querySelector('.tooltip');
+  if (tooltip) tooltip.textContent = location.name;
+
+  element.addEventListener('click', (event) => {
+    event.stopPropagation();
+    openLocationModal(location);
+  });
+  element.addEventListener('mouseenter', () => applyMarkerAppearance(location, element, true));
+  element.addEventListener('mouseleave', () => applyMarkerAppearance(location, element, false));
+
+  applyMarkerAppearance(location, element, false);
+  return element;
 }
 
-function onMarkerMouseOut() {
-  hoveredLocationId.value = null;
+function removeAllMarkers() {
+  const map = mapInstance.value;
+
+  mapMarkers.forEach(({ marker, element }) => {
+    if (map) {
+      try {
+        map.removeChild(marker);
+      } catch {
+        // карта уже уничтожена (уход со страницы) — чистим только DOM
+      }
+    }
+    element.remove();
+  });
+
+  mapMarkers.clear();
+}
+
+/** Перерисовать маркеры по текущему списку локаций. */
+function syncMarkers() {
+  const map = mapInstance.value;
+  const ymaps3 = window.ymaps3;
+  if (!map || !ymaps3?.YMapMarker) return;
+
+  removeAllMarkers();
+
+  locations.value.forEach((location) => {
+    const coordinates = [Number(location.longitude), Number(location.latitude)];
+    if (!coordinates.every(Number.isFinite)) return;
+
+    const element = createMarkerElement(location);
+    const marker = new ymaps3.YMapMarker({ coordinates }, element);
+    map.addChild(marker);
+    mapMarkers.set(location.id, { marker, element });
+  });
 }
 
 
 watch(() => cityStore.selectedCity, (newCity) => {
-  if (newCity && isMapReady.value && mapRef.value) {
-    mapRef.value.setLocation({
+  // setLocation есть у объекта YMap (ymaps3), а не у компонента карты.
+  if (newCity?.coords?.length === 2 && mapInstance.value) {
+    mapInstance.value.setLocation({
       center: [newCity.coords[1], newCity.coords[0]],
       zoom: 12
     });
@@ -366,6 +468,13 @@ watch(() => locationStore.selectedCategoryIds, () => {
   position: relative;
 }
 
+</style>
+
+<!--
+  Стили маркеров — БЕЗ scoped: элементы создаются императивно
+  (см. createMarkerElement) и не попадают в область видимости компонента.
+-->
+<style>
 .custom-marker {
     position: absolute;
     left: 0;

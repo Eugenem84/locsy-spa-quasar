@@ -48,6 +48,17 @@
 | `/login`, `/register` | Login / Register | Вход и регистрация |
 | `/register` | Register | Роль выбирается переключателем |
 
+## Стенды
+
+| Контур | Адрес | Что это |
+|---|---|---|
+| local | `http://localhost:9000` | разработка на Mac (`npm run dev`) |
+| **обкатка** | https://locsy.dev.medovf2h.beget.tech | **домашний сервер** (Ubuntu за VPS-шлюзом): фича проверяется здесь, и только потом уходит на dev |
+| dev | `dev.medovf2h.beget.tech` | цель выкладки (`217.114.0.27`); Locsy туда ещё не переносили |
+
+Подробности по контурам (домены, контейнеры, деплой, проверка) —
+[`docs/ENVIRONMENTS.md`](./docs/ENVIRONMENTS.md); регламент деплоя — [`DEPLOY.md`](./DEPLOY.md).
+
 ## Запуск
 
 ```sh
@@ -57,8 +68,18 @@ npm run build          # production-сборка -> dist/spa
 ```
 
 Требуется запущенный бэкенд (`locsy-laravel-backend`), доступный на том же
-домене (в dev — через nginx из `docker-compose.yml` бэкенда: `/api/` проксируется
-в Laravel). Базовый URL API задан в `src/boot/axios.js`.
+домене: в локальном контуре — через nginx из `docker-compose.yml` бэкенда
+(`/api/` проксируется в Laravel), на сервере — через `nginx/web.conf` проекта.
+Базовый URL API задан относительным (`baseURL: '/'` в `src/boot/axios.js`),
+поэтому сборка не привязана к конкретному домену.
+
+> Дев-сервер на `localhost:9000` **проксирует `/api` и `/sanctum`** на локальный
+> бэкенд (`http://localhost` — сервис nginx из `locsy-laravel-backend`), см.
+> `devServer.proxy` в `quasar.config.js`. Благодаря этому SPA и API живут на одном
+> origin'е и cookie Sanctum работают штатно. Нужен запущенный бэкенд:
+> `cd ../locsy-laravel-backend && docker compose up -d`. Если API не нужен,
+> включите MSW-моки (`src/boot/msw.js`). Подробности — в
+> [`docs/ENVIRONMENTS.md`](./docs/ENVIRONMENTS.md).
 
 ### Переменные окружения
 
@@ -90,7 +111,8 @@ docker build -t locsy-spa .
 `Dockerfile` собирает SPA и раздаёт её через nginx (`nginx.conf`).
 В полном стенде контейнер SPA поднимается из `docker-compose.yml` бэкенда
 (сервис `frontend`), а внешний nginx проксирует `/api/`, `/sanctum/`,
-`/storage/` и `/admin` в Laravel.
+`/storage/` и `/admin` в Laravel. На сервере обкатки тот же образ собирается
+как сервис `locsy-spa` в `/opt/projects/locsy` (см. [`DEPLOY.md`](./DEPLOY.md)).
 
 ## Структура
 
@@ -107,6 +129,9 @@ src/
 
 ## Документация
 
+- [`docs/ENVIRONMENTS.md`](./docs/ENVIRONMENTS.md) — стенды проекта: local,
+  обкатка на домашнем сервере, dev; деплой и проверка.
+- [`DEPLOY.md`](./DEPLOY.md) — регламент деплоя этого репозитория.
 - [`PRESENTATION.md`](./PRESENTATION.md) — презентация проекта (концепция,
   роли, модерация, модель монетизации, roadmap).
 

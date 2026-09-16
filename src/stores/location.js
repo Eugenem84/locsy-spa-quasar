@@ -24,13 +24,22 @@ export const useLocationStore = defineStore('location', () => {
     }
   }
 
+  /**
+   * Локации в видимой области карты.
+   *
+   * @param {[[number, number], [number, number]]} bounds
+   *   Границы в формате [[широта юго-запада, долгота юго-запада],
+   *   [широта северо-востока, долгота северо-востока]] —
+   *   в таком виде их отдаёт YandexMapView (см. map.bounds в ymaps3).
+   */
   async function fetchLocationsByBounds(bounds) {
     try {
+      const [[swLat, swLng], [neLat, neLng]] = bounds;
       const params = {
-        sw_lat: bounds.getSouthWest().lat,
-        sw_lng: bounds.getSouthWest().lng,
-        ne_lat: bounds.getNorthEast().lat,
-        ne_lng: bounds.getNorthEast().lng,
+        sw_lat: swLat,
+        sw_lng: swLng,
+        ne_lat: neLat,
+        ne_lng: neLng,
       };
 
       if (selectedCategoryIds.value.length > 0) {
