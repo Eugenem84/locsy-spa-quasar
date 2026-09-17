@@ -62,6 +62,7 @@
             type="email"
             outlined
             dense
+            hint="На этот адрес придут письма для восстановления пароля"
             :rules="[
               (val) => !!val || 'Укажите email',
               (val) => /.+@.+\..+/.test(val) || 'Некорректный email'

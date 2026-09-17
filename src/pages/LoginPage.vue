@@ -2,7 +2,7 @@
   <q-page class="flex flex-center">
     <q-card class="q-pa-md" style="width: 400px">
       <q-card-section>
-        <div class="text-h6">Login</div>
+        <div class="text-h6">Вход в Locsy</div>
       </q-card-section>
 
       <q-card-section>
@@ -14,24 +14,39 @@
             outlined
             dense
             class="q-mb-md"
-            :rules="[val => !!val || 'Email is required']"
+            :rules="[(val) => !!val || 'Укажите email']"
           />
           <q-input
             v-model="form.password"
-            label="Password"
+            label="Пароль"
             type="password"
             outlined
             dense
             class="q-mb-md"
-            :rules="[val => !!val || 'Password is required']"
+            :rules="[(val) => !!val || 'Введите пароль']"
           />
+
+          <div class="text-right q-mb-md">
+            <router-link to="/forgot-password" class="text-primary text-body2">
+              Забыли пароль?
+            </router-link>
+          </div>
+
           <q-btn
             type="submit"
-            label="Login"
+            label="Войти"
             color="primary"
             class="full-width"
             :loading="loading"
+            no-caps
           />
+
+          <div class="text-center text-body2 text-grey-7 q-mt-md">
+            Нет аккаунта?
+            <router-link to="/register" class="text-primary text-weight-medium">
+              Зарегистрироваться
+            </router-link>
+          </div>
         </q-form>
       </q-card-section>
     </q-card>
@@ -40,10 +55,12 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
 
+const $q = useQuasar();
 const form = ref({
   email: '',
   password: '',
@@ -52,6 +69,14 @@ const form = ref({
 const loading = ref(false);
 const router = useRouter();
 const authStore = useAuthStore();
+
+function errorMessage(error, fallback) {
+  if (error.response?.data?.errors) {
+    return Object.values(error.response.data.errors).flat().join(' ');
+  }
+
+  return error.response?.data?.message || fallback;
+}
 
 const handleLogin = async () => {
   loading.value = true;
@@ -74,18 +99,19 @@ const handleLogin = async () => {
     router.push('/');
 
   } catch (error) {
-    let errorMessage = 'Login failed. Please check your credentials.';
-    if (error.response?.data?.errors) {
-      errorMessage = Object.values(error.response.data.errors).flat().join(' ');
-    } else if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    }
+    const message = errorMessage(error, 'Не удалось войти. Проверьте email и пароль.');
+
     console.error('Login Error:', {
-      message: errorMessage,
+      message,
       status: error?.response?.status,
       url: error?.config?.url,
       method: error?.config?.method,
-      response: error?.response?.data,
+    });
+
+    $q.notify({
+      color: 'negative',
+      icon: 'report_problem',
+      message,
     });
   } finally {
     loading.value = false;

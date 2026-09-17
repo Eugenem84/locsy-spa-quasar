@@ -32,6 +32,16 @@ const routes = [
         component: () => import('pages/LoginPage.vue')
       },
       {
+        path: '/forgot-password',
+        name: 'ForgotPassword',
+        component: () => import('pages/ForgotPasswordPage.vue')
+      },
+      {
+        path: '/reset-password',
+        name: 'ResetPassword',
+        component: () => import('pages/ResetPasswordPage.vue')
+      },
+      {
         path: '/favorites',
         name: 'Favorites',
         component: () => import('pages/FavoritesPage.vue'),
