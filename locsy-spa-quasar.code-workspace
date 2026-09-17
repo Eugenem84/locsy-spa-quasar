@@ -1,11 +1,21 @@
 {
 	"folders": [
 		{
+			"name": "locsy-spa-quasar (SPA)",
 			"path": "."
 		},
 		{
+			"name": "locsy-laravel-backend (API + админка /admin)",
 			"path": "../locsy-laravel-backend"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"search.exclude": {
+			"**/node_modules": true,
+			"**/vendor": true,
+			"**/dist": true,
+			"**/.quasar": true,
+			"**/storage/logs": true
+		}
+	}
 }
