@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue'
 import { api } from 'boot/axios'
 import { useRouter } from 'vue-router'
 import { useCityStore } from 'stores/city'
+import { formatCityName } from 'src/utils/city-name.js'
 
 const favorites = ref([])
 const loading = ref(true)
@@ -111,7 +112,7 @@ async function removeFromFavorites(location) {
               text-color="primary"
               position="top-left"
             >
-              {{ location.city.name }}
+              {{ formatCityName(location.city.name) }}
             </q-badge>
           </q-img>
 

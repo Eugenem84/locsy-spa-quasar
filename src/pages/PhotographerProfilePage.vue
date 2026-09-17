@@ -18,7 +18,7 @@
           <div class="col">
             <div class="text-h5 text-weight-bold">{{ photographer.display_name }}</div>
             <div v-if="photographer.city" class="text-subtitle2 text-grey-7">
-              <q-icon name="place" size="16px" /> {{ photographer.city.name }}
+              <q-icon name="place" size="16px" /> {{ formatCityName(photographer.city.name) }}
             </div>
             <div class="row q-gutter-xs q-mt-sm">
               <q-chip dense color="primary" text-color="white" icon="photo_library">
@@ -256,6 +256,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios.js'
 import { useAuthStore } from 'stores/auth-store'
+import { formatCityName } from 'src/utils/city-name.js'
 import {
   YandexMap,
   YandexMapDefaultSchemeLayer,

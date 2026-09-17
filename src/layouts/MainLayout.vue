@@ -5,9 +5,9 @@
       elevated
       class="bg-gradient-primary"
     >
-      <q-toolbar class="q-py-sm">
-        <router-link to="/" class="row items-center no-wrap">
-          <q-img src="/logo/logo.png" style="height: 44px; width: 132px" fit="contain" />
+      <q-toolbar class="q-py-sm header-toolbar">
+        <router-link to="/" class="logo-link row items-center no-wrap">
+          <img src="/logo/logo.png" alt="Locsy" class="logo-img" />
         </router-link>
 
         <div class="row items-center q-ml-md gt-xs">
@@ -27,6 +27,9 @@
           outlined
           dark
           clearable
+          behavior="menu"
+          :options-dark="false"
+          popup-content-class="select-popup city-popup"
           class="city-select q-mr-sm"
           @popup-show="() => cityStore.fetchCities()"
         >
@@ -36,8 +39,8 @@
                 <q-input
                   dense
                   autofocus
-                  color="white"
-                  input-style="color: white"
+                  hide-bottom-space
+                  color="primary"
                   placeholder="Поиск города..."
                   debounce="300"
                   @update:model-value="(val) => cityStore.fetchCities(val)"
@@ -139,10 +142,14 @@ onMounted(async () => {
   await cityStore.fetchCities()
 })
 
-// Подставляем город пользователя, когда загрузились и он сам, и справочник городов
+// Подставляем город пользователя, когда загрузились и он сам, и справочник городов.
+// Если город уже выбран, второй раз его не трогаем: каждый перезапрос справочника
+// (поиск в селекте) приносит новые объекты, а подмена выбранного города
+// без нужды перерисовывает карту и список локаций.
 function applyUserCity() {
   const userCityId = authStore.user?.city_id
   if (!userCityId || !cityStore.cities.length) return
+  if (cityStore.selectedCity?.id === userCityId) return
   const userCity = cityStore.cities.find((c) => c.id === userCityId)
   if (userCity) cityStore.setSelectedCity(userCity)
 }
@@ -152,9 +159,56 @@ watch(() => [authStore.user, cityStore.cities.length], applyUserCity, { immediat
 
 <style scoped>
 .city-select {
-  width: 100%;
+  /* Фиксированная ширина: селект не должен подстраиваться под длину названия
+     города — иначе от выбранного города «дёргается» вся шапка (и карта под ней).
+     Не влезающее название обрезаем многоточием, см. правила ниже. */
+  flex: 0 1 auto;
+  width: 280px;
   min-width: 150px;
-  max-width: 280px;
+}
+
+/* Значение поля всегда в одну строку и не растягивает поле */
+.city-select :deep(.q-field__native) {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.city-select :deep(.q-field__native > .ellipsis) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Шапка: логотип должен стоять ближе к краю — уменьшаем отступ тулбара */
+.header-toolbar {
+  padding-left: 6px;
+}
+
+/* Логотип не должен сжиматься из-за соседних элементов шапки */
+.logo-link {
+  flex: 0 0 auto;
+}
+
+/* В PNG вокруг эмблемы и названия есть прозрачные поля, а fit="contain"
+   добавлял ещё и «воздух» по бокам. Задаём только высоту (как было раньше) —
+   ширина берётся по пропорции картинки, поэтому логотип прижат к левому краю */
+.logo-img {
+  display: block;
+  height: 44px;
+  width: auto;
+}
+
+/* На телефоне селект города не должен съедать всю шапку */
+@media (max-width: 599px) {
+  .city-select {
+    /* Ширина считается от свободного места в шапке, а не от длины названия города */
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 42vw;
+    font-size: 13px;
+  }
 }
 
 .avatar-ring {

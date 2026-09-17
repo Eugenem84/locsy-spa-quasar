@@ -37,6 +37,9 @@
         dense
         emit-value
         map-options
+        behavior="menu"
+        :options-dark="false"
+        popup-content-class="select-popup filter-popup"
         @popup-show="() => categoryStore.fetchCategories()"
       >
         <template v-slot:prepend>

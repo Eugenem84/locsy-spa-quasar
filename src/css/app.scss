@@ -15,3 +15,50 @@
   box-shadow: 0 6px 24px rgba(5, 39, 71, 0.08);
 }
 
+// Попапы селектов (город, фильтр категорий).
+// QMenu рендерится через portal прямо в <body>, поэтому scoped-стили компонентов
+// до него не достают — общие стили попапа держим здесь, а класс передаём
+// в popup-content-class у q-select.
+.select-popup {
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(5, 39, 71, 0.22);
+
+  // Строки списка: удобный тап-таргет и читаемый текст на светлом фоне
+  .q-item {
+    min-height: 44px;
+    color: rgba(0, 0, 0, 0.87);
+  }
+
+  .q-item__label {
+    font-size: 14px;
+    line-height: 1.25;
+    white-space: normal; // длинные названия переносим, а не обрезаем
+  }
+
+  // Выбранный пункт подсвечиваем цветом бренда
+  .q-item--active {
+    color: $primary;
+  }
+}
+
+// На телефоне попап не должен закрывать весь экран и уходить под клавиатуру
+@media (max-width: 599px) {
+  .select-popup {
+    max-height: 320px !important;
+    min-width: 240px !important;
+    max-width: 92vw !important;
+  }
+}
+
+// Попап выбора города: ширина списка постоянная, чтобы он не «дёргался»,
+// подстраиваясь под длину самого широкого названия. Position-engine Quasar
+// (fit при menu-shrink=false) ставит меню inline min-width по ширине поля
+// и сбрасывает max-width, а у .q-menu есть свой max-width — перебиваем оба
+// через !important. Не влезающие названия переносятся по строкам
+// (правило .select-popup .q-item__label выше).
+.city-popup {
+  width: 320px;
+  min-width: 0 !important;
+  max-width: 92vw !important;
+}
+
