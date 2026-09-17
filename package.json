@@ -1,8 +1,8 @@
 {
   "name": "locsy",
   "version": "0.0.1",
-  "description": "A Quasar Project",
-  "productName": "Locsy",
+  "description": "Getlocsy — карта фотолокаций: места для фотосессий, галереи снимков и фотографы в вашем городе.",
+  "productName": "Getlocsy",
   "author": "medov 1st comit <medov-foto@mail.ru>",
   "type": "module",
   "private": true,

@@ -6,9 +6,7 @@
       class="bg-gradient-primary"
     >
       <q-toolbar class="q-py-sm header-toolbar">
-        <router-link to="/" class="logo-link row items-center no-wrap">
-          <img src="/logo/logo.png" alt="Locsy" class="logo-img" />
-        </router-link>
+        <BrandLogo />
 
         <div class="row items-center q-ml-md gt-xs">
           <q-btn flat dense no-caps icon="explore" label="Карта" to="/" />
@@ -115,6 +113,7 @@ import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCityStore } from 'stores/city.js'
 import { useAuthStore } from 'stores/auth-store'
+import BrandLogo from 'components/BrandLogo.vue'
 import UserProfile from 'components/UserProfile.vue'
 
 const router = useRouter()
@@ -185,19 +184,8 @@ watch(() => [authStore.user, cityStore.cities.length], applyUserCity, { immediat
   padding-left: 6px;
 }
 
-/* Логотип не должен сжиматься из-за соседних элементов шапки */
-.logo-link {
-  flex: 0 0 auto;
-}
-
-/* В PNG вокруг эмблемы и названия есть прозрачные поля, а fit="contain"
-   добавлял ещё и «воздух» по бокам. Задаём только высоту (как было раньше) —
-   ширина берётся по пропорции картинки, поэтому логотип прижат к левому краю */
-.logo-img {
-  display: block;
-  height: 44px;
-  width: auto;
-}
+/* Логотип-локап (эмблема + вордмарк «getlocsy») живёт в components/BrandLogo.vue:
+   он сам держит flex: 0 0 auto и высоту эмблемы, поэтому здесь стилей не нужно. */
 
 /* На телефоне селект города не должен съедать всю шапку */
 @media (max-width: 599px) {

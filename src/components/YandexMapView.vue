@@ -182,7 +182,7 @@ async function initializeMap() {
   // Быстрая диагностика в консоли браузера: сколько локаций пришло и сколько маркеров нарисовано.
   if (import.meta.env.DEV) {
     console.debug(
-      '[Locsy] локаций на карте: %d, маркеров отрисовано: %d',
+      '[Getlocsy] локаций на карте: %d, маркеров отрисовано: %d',
       locations.value.length,
       mapMarkers.size
     );

@@ -2,7 +2,7 @@
   <q-page class="flex flex-center">
     <q-card class="q-pa-md" style="width: 400px">
       <q-card-section>
-        <div class="text-h6">Вход в Locsy</div>
+        <div class="text-h6">Вход в Getlocsy</div>
       </q-card-section>
 
       <q-card-section>
