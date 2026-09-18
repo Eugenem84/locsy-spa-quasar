@@ -67,6 +67,15 @@
               <q-item-label header class="text-grey-7">
                 {{ authStore.userName || 'Профиль' }}
               </q-item-label>
+              <q-item
+                v-if="!authStore.isEmailVerified"
+                clickable
+                v-close-popup
+                to="/verify-email"
+              >
+                <q-item-section avatar><q-icon name="mark_email_unread" /></q-item-section>
+                <q-item-section><q-item-label>Подтвердить почту</q-item-label></q-item-section>
+              </q-item>
               <q-item clickable v-close-popup to="/favorites">
                 <q-item-section avatar><q-icon name="favorite" /></q-item-section>
                 <q-item-section><q-item-label>Избранное</q-item-label></q-item-section>
@@ -96,6 +105,19 @@
           <q-btn outline no-caps label="Регистрация" to="/register" class="q-ml-sm gt-xs" />
         </div>
       </q-toolbar>
+
+      <!-- Пока почта не подтверждена, функции аккаунта закрыты: напоминаем -->
+      <q-banner
+        v-if="authStore.isLoggedIn && !authStore.isEmailVerified"
+        dense
+        class="bg-orange-9 text-white"
+      >
+        <template v-slot:avatar><q-icon name="mark_email_unread" /></template>
+        Подтвердите почту — пока адрес не подтверждён, избранное, локации и фото недоступны.
+        <template v-slot:action>
+          <q-btn flat dense no-caps label="Подтвердить" to="/verify-email" />
+        </template>
+      </q-banner>
     </q-header>
 
     <q-page-container>

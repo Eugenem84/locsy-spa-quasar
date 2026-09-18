@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.name;
   });
   const isPhotographer = computed(() => !!user.value?.is_photographer);
+  const isEmailVerified = computed(() => !!user.value?.email_verified_at);
 
   // Actions
   function setUser(newUser) {
@@ -138,6 +139,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * Повторная отправка письма со ссылкой на подтверждение почты.
+   */
+  async function resendVerificationEmail() {
+    const { data } = await api.post('/api/email/verification-notification');
+    return data;
+  }
+
+  /**
    * Сохранение профиля фотографа (в том числе апгрейд из обычного пользователя).
    */
   async function updatePhotographerProfile(payload) {
@@ -176,6 +185,7 @@ export const useAuthStore = defineStore('auth', () => {
     isLoggedIn,
     userName,
     isPhotographer,
+    isEmailVerified,
     setUser,
     clearUser,
     setAuthToken, // Экспортируем новое действие
@@ -185,6 +195,7 @@ export const useAuthStore = defineStore('auth', () => {
     updateUserCity,
     uploadAvatar,
     register,
+    resendVerificationEmail,
     updatePhotographerProfile,
     fetchMyLocations,
     fetchMyPhotos,

@@ -29,11 +29,19 @@ export default defineRouter(function (/* { store, ssrContext } */) {
 
   Router.beforeEach((to, from, next) => {
     const authStore = useAuthStore()
-    if (to.matched.some(record => record.meta.requiresAuth) && !authStore.isLoggedIn) {
-      next('/login')
-    } else {
-      next()
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+    const requiresVerified = to.matched.some(record => record.meta.requiresVerified)
+
+    if (requiresAuth && !authStore.isLoggedIn) {
+      return next('/login')
     }
+
+    // Вошли, но почта не подтверждена — сначала подтверждение
+    if (requiresVerified && authStore.isLoggedIn && !authStore.isEmailVerified) {
+      return next('/verify-email')
+    }
+
+    next()
   })
 
   return Router

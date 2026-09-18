@@ -24,7 +24,7 @@ defineProps({
   hideWordmarkOnMobile: { type: Boolean, default: true }
 })
 
-const ariaLabel = 'Getlocsy — на главную'
+const ariaLabel = 'getlocsy — на главную'
 </script>
 
 <style scoped>

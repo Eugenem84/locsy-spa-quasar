@@ -4,7 +4,7 @@
       <q-card-section>
         <div class="text-h5 text-weight-bold">Новый пароль</div>
         <div class="text-body2 text-grey-7 q-mt-xs">
-          Придумайте новый пароль для входа в Getlocsy.
+          Придумайте новый пароль для входа в getlocsy.
         </div>
       </q-card-section>
 

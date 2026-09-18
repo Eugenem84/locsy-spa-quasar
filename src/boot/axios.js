@@ -1,5 +1,6 @@
 import { defineBoot } from '#q-app/wrappers'
 import axios from 'axios'
+import { Notify } from 'quasar'
 
 // Create a configured instance of Axios
 const api = axios.create({
@@ -25,6 +26,31 @@ api.interceptors.request.use(config => {
 }, error => {
   return Promise.reject(error);
 });
+
+// Единая обработка «почта не подтверждена» (бэкенд отдаёт 403 + email_verified=false):
+// показываем подсказку и уводим на страницу подтверждения, откуда письмо можно
+// выслать повторно. Так не нужно дублировать проверку в каждом действии.
+api.interceptors.response.use(
+  response => response,
+  error => {
+    const response = error?.response;
+
+    if (response?.status === 403 && response?.data?.email_verified === false) {
+      Notify.create({
+        color: 'warning',
+        icon: 'mark_email_unread',
+        message: response.data.message || 'Подтвердите почту, чтобы пользоваться аккаунтом.'
+      });
+
+      // Роутер в hash-режиме: уводим програмно, без обращения к роутеру из boot
+      if (window.location.hash !== '#/verify-email') {
+        window.location.hash = '#/verify-email';
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 
 export default defineBoot(({ app }) => {

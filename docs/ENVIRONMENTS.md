@@ -184,6 +184,14 @@ ssh dev-vps 'curl -sS -o /dev/null -w "%{http_code}\n" https://locsy.dev.medovf2
   (SPA специально не логинит автоматически и уводит на `/login`). Ошибку «ссылка
   недействительна/устарела» бэкенд отдаёт как `422` без ошибок полей — страница
   `/reset-password` по этому признаку показывает ссылку «Запросить новую».
+- **Подтверждение почты обязательно.** После регистрации бэкенд шлёт письмо со ссылкой на
+  `GET /email/verify/{id}/{hash}` (генерируется на `APP_URL` бэкенда), а после подтверждения
+  редиректит на `<FRONTEND_URL>/#/verify-email?status=verified|invalid`. Пока адрес не
+  подтверждён, функции аккаунта отдают `403` с `email_verified: false`: SPA ловит это в
+  `boot/axios.js`, показывает уведомление и уводит на `/verify-email`, а маршруты с
+  `meta.requiresVerified` (например `/favorites`) редиректит гард (`router/index.js`).
+  Важно: nginx контура должен проксировать `/email/` в Laravel, иначе ссылка из письма
+  уйдёт в SPA-фолбэк (см. `locsy-laravel-backend/nginx.conf`).
 
 ## 9. Что нужно, чтобы выложить Locsy на dev (`dev.medovf2h.beget.tech`)
 

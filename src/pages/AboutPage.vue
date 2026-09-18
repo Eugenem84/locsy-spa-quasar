@@ -4,7 +4,7 @@
       <div class="hero-inner">
         <q-badge color="accent" text-color="white" class="q-mb-md">О проекте</q-badge>
         <h1 class="text-h3 text-weight-bold q-my-none">
-          Getlocsy — места для фотосессий в вашем городе и в путешествиях
+          getlocsy — места для фотосессий в вашем городе и в путешествиях
         </h1>
         <p class="text-h6 text-weight-regular q-mt-md q-mb-lg hero-lead">
           Карта фотогеничных локаций, галереи реальных снимков и фотографы,

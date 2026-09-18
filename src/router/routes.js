@@ -42,10 +42,15 @@ const routes = [
         component: () => import('pages/ResetPasswordPage.vue')
       },
       {
+        path: '/verify-email',
+        name: 'VerifyEmail',
+        component: () => import('pages/VerifyEmailPage.vue')
+      },
+      {
         path: '/favorites',
         name: 'Favorites',
         component: () => import('pages/FavoritesPage.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiresVerified: true }
       }
     ]
   },

@@ -2,7 +2,7 @@
   <q-page class="flex flex-center q-pa-md auth-page">
     <q-card class="auth-card q-pa-sm">
       <q-card-section>
-        <div class="text-h5 text-weight-bold">Регистрация в Locsy</div>
+        <div class="text-h5 text-weight-bold">Регистрация в getlocsy</div>
         <div class="text-body2 text-grey-7 q-mt-xs">
           Выберите, как вы будете пользоваться сервисом. Это можно изменить позже.
         </div>
@@ -264,17 +264,12 @@ async function handleRegister() {
 
     $q.notify({
       color: 'positive',
-      icon: 'check',
-      message: isPhotographer.value
-        ? 'Профиль фотографа создан — можно делиться ссылкой!'
-        : 'Добро пожаловать в Locsy!'
+      icon: 'mark_email_read',
+      message: 'Аккаунт создан. Мы отправили письмо со ссылкой для подтверждения почты.'
     })
 
-    if (isPhotographer.value && authStore.user?.id) {
-      router.push({ name: 'PhotographerProfile', params: { id: authStore.user.id } })
-    } else {
-      router.push('/')
-    }
+    // Подтверждение почты обязательно — уводим на страницу ожидания
+    router.push('/verify-email')
   } catch (error) {
     $q.notify({
       color: 'negative',
