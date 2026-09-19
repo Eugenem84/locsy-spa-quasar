@@ -162,74 +162,109 @@ function goBack() {
       <q-spinner color="primary" size="3em" />
     </div>
 
-    <div v-if="!loading && location">
-      <!-- Название локации и категории -->
-      <div class="q-pa-md">
-        <h4 class="text-h4 text-weight-bold q-mb-sm">{{ location.name }}</h4>
-        <!-- Блок для отображения категорий -->
-        <div v-if="location.categories && location.categories.length" class="q-gutter-sm">
-          <q-chip
-            v-for="category in location.categories"
-            :key="category.id"
-            color="primary"
-            text-color="white"
-            icon="label"
+    <div v-if="!loading && location" class="page-inner">
+      <!-- Шапка локации: название и категории -->
+      <q-card flat bordered class="section-card q-mb-md">
+        <q-card-section>
+          <h1 class="text-h5 text-weight-bold q-mt-none q-mb-sm">{{ location.name }}</h1>
+          <!-- Блок для отображения категорий -->
+          <div
+            v-if="location.categories && location.categories.length"
+            class="row q-gutter-xs"
           >
-            {{ category.name }}
-          </q-chip>
-        </div>
-      </div>
-
-      <!-- Сетка фотографий -->
-      <q-scroll-area :style="{ height: '70vh' }" class="q-mb-md">
-        <div
-          v-if="photoGallery.length === 0"
-          class="column flex-center q-pa-xl text-center text-grey-7"
-        >
-          <q-icon name="photo_library" size="48px" color="grey-5" />
-          <div class="text-body1 q-mt-sm">Здесь пока нет фотографий</div>
-          <div class="text-caption q-mb-md">
-            Станьте первым — загрузите свои снимки этого места
+            <q-chip
+              v-for="category in location.categories"
+              :key="category.id"
+              dense
+              color="primary"
+              text-color="white"
+              icon="label"
+            >
+              {{ category.name }}
+            </q-chip>
           </div>
+        </q-card-section>
+      </q-card>
+
+      <!-- Фотографии локации -->
+      <q-card flat bordered class="section-card q-mb-md">
+        <q-card-section class="row items-center no-wrap">
+          <q-icon name="photo_library" size="20px" color="primary" class="q-mr-sm" />
+          <div class="text-h6">Фотографии</div>
+          <q-badge v-if="photoGallery.length" color="primary" class="q-ml-sm">
+            {{ photoGallery.length }}
+          </q-badge>
+          <q-space />
           <q-btn
             v-if="authStore.isLoggedIn"
-            color="primary"
+            flat
+            dense
             no-caps
+            color="primary"
             icon="add_a_photo"
-            label="Добавить фото"
+            label="Добавить"
             @click="addPhoto"
           />
-          <q-btn
-            v-else
-            color="primary"
-            no-caps
-            icon="login"
-            label="Войти и добавить фото"
-            to="/login"
-          />
-        </div>
+        </q-card-section>
 
-        <div v-else class="photo-grid q-pa-md">
+        <q-card-section class="q-pt-none">
           <div
-            v-for="(photo, index) in photoGallery"
-            :key="photo.id"
-            class="photo-card"
-            @click="openGallery(index)"
+            v-if="photoGallery.length === 0"
+            class="empty-photos column flex-center q-pa-xl text-center text-grey-7"
           >
-            <q-img
-              :src="photo.full_url"
-              :ratio="4/3"
-              spinner-color="grey-5"
-              class="rounded-borders"
+            <q-icon name="photo_library" size="48px" color="grey-5" />
+            <div class="text-body1 q-mt-sm">Здесь пока нет фотографий</div>
+            <div class="text-caption q-mb-md">
+              Станьте первым — загрузите свои снимки этого места
+            </div>
+            <q-btn
+              v-if="authStore.isLoggedIn"
+              color="primary"
+              no-caps
+              icon="add_a_photo"
+              label="Добавить фото"
+              @click="addPhoto"
+            />
+            <q-btn
+              v-else
+              color="primary"
+              no-caps
+              icon="login"
+              label="Войти и добавить фото"
+              to="/login"
             />
           </div>
-        </div>
-      </q-scroll-area>
 
-      <!-- Описание -->
-      <div class="q-pa-md q-mt-md">
-        <p class="text-body1 text-grey-8">{{ location.description }}</p>
-      </div>
+          <div v-else class="photo-grid">
+            <div
+              v-for="(photo, index) in photoGallery"
+              :key="photo.id"
+              class="photo-card"
+              @click="openGallery(index)"
+            >
+              <q-img :src="photo.full_url" :ratio="4 / 3" spinner-color="grey-5">
+                <div class="photo-hover row flex-center">
+                  <q-icon name="zoom_in" size="28px" />
+                </div>
+              </q-img>
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+
+      <!-- Описание локации -->
+      <q-card flat bordered class="section-card q-mb-md">
+        <q-card-section class="row items-center no-wrap">
+          <q-icon name="notes" size="20px" color="primary" class="q-mr-sm" />
+          <div class="text-h6">Описание</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <p class="description-text text-body1 text-grey-8 q-mb-none">
+            {{ location.description || 'Описание пока не добавлено.' }}
+          </p>
+        </q-card-section>
+      </q-card>
     </div>
 
     <div v-if="!loading && !location" class="fullscreen row flex-center text-h6 text-grey">
@@ -319,31 +354,66 @@ function goBack() {
   background-color: #f9f9f9;
 }
 
-.text-h4 {
-  line-height: 1.2;
+/* Контент страницы: ограничиваем ширину и даём отступ сверху
+   под плавающие кнопки «назад» и «избранное». */
+.page-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 64px 16px 24px;
 }
 
-.photo-card {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  cursor: pointer;
-  transition: transform 0.2s ease;
+.section-card {
+  border-radius: 16px;
 }
 
 .photo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.photo-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .photo-card:hover {
   transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
 }
 
-.photo-card .q-img {
-  width: 100%;
-  height: auto;
+/* Подсказка «открыть фото» при наведении (на тач-устройствах скрыта) */
+.photo-hover {
+  height: 100%;
+  color: #fff;
+  background: rgba(5, 39, 71, 0.35);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.photo-card:hover .photo-hover {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .photo-hover {
+    display: none;
+  }
+}
+
+/* Пустое состояние галереи: не даём блоку «схлопнуться» */
+.empty-photos {
+  min-height: 200px;
+}
+
+/* Описание: сохраняем абзацы, введённые в textarea формы создания локации */
+.description-text {
+  white-space: pre-line;
+  line-height: 1.6;
 }
 
 .photographer-link {
@@ -353,5 +423,22 @@ function goBack() {
 }
 .photographer-link:hover {
   text-decoration: underline;
+}
+
+/* Мобильные: две колонки в галерее и меньше отступы,
+   чтобы описание шло сразу под фотографиями и не уезжало за экран */
+@media (max-width: 599px) {
+  .page-inner {
+    padding: 56px 12px 16px;
+  }
+
+  .photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .empty-photos {
+    min-height: 160px;
+  }
 }
 </style>
