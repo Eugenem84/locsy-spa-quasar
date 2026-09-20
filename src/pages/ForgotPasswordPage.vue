@@ -18,6 +18,18 @@
           Письмо отправлено. Проверьте входящие — и папку «Спам», если его не видно.
         </q-banner>
 
+        <q-banner
+          v-if="notFound"
+          dense
+          class="bg-red-1 text-red-9 rounded-borders q-mb-md"
+        >
+          <template v-slot:avatar><q-icon name="person_off" /></template>
+          {{ errorMessage }}
+          <router-link to="/register" class="text-primary text-weight-medium">
+            Зарегистрироваться
+          </router-link>
+        </q-banner>
+
         <q-form @submit.prevent="handleSubmit" class="q-gutter-md">
           <q-input
             v-model="email"
@@ -64,6 +76,8 @@ const authStore = useAuthStore()
 const email = ref('')
 const loading = ref(false)
 const sent = ref(false)
+const notFound = ref(false)
+const errorMessage = ref('')
 const cooldown = ref(0)
 
 /**
@@ -82,6 +96,9 @@ function startCooldown(seconds = 60) {
 
 async function handleSubmit() {
   loading.value = true
+  sent.value = false
+  notFound.value = false
+  errorMessage.value = ''
 
   try {
     // Sanctum: POST-запросы в группе web защищены CSRF, поэтому сначала берём куку
@@ -97,10 +114,15 @@ async function handleSubmit() {
       message: translateMessage(data?.message) || 'Письмо отправлено'
     })
   } catch (error) {
+    const message = extractApiMessage(error, 'Не удалось отправить письмо. Попробуйте ещё раз.')
+    errorMessage.value = message
+    // 404 — адрес не зарегистрирован: подсказываем проверить его или создать аккаунт
+    notFound.value = error?.response?.status === 404
+
     $q.notify({
       color: 'negative',
       icon: 'report_problem',
-      message: extractApiMessage(error, 'Не удалось отправить письмо. Попробуйте ещё раз.')
+      message
     })
   } finally {
     loading.value = false
