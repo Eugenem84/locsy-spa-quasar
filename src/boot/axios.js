@@ -1,6 +1,7 @@
 import { defineBoot } from '#q-app/wrappers'
 import axios from 'axios'
 import { Notify } from 'quasar'
+import { translateMessage } from 'src/utils/api-message.js'
 
 // Create a configured instance of Axios
 const api = axios.create({
@@ -39,7 +40,7 @@ api.interceptors.response.use(
       Notify.create({
         color: 'warning',
         icon: 'mark_email_unread',
-        message: response.data.message || 'Подтвердите почту, чтобы пользоваться аккаунтом.'
+        message: translateMessage(response.data.message) || 'Подтвердите почту, чтобы пользоваться аккаунтом.'
       });
 
       // Роутер в hash-режиме: уводим програмно, без обращения к роутеру из boot

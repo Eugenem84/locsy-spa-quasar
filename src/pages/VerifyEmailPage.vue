@@ -101,6 +101,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'stores/auth-store'
+import { extractApiMessage, translateMessage } from 'src/utils/api-message.js'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -142,13 +143,13 @@ async function resend() {
     $q.notify({
       color: 'positive',
       icon: 'mark_email_read',
-      message: data?.message || 'Письмо отправлено'
+      message: translateMessage(data?.message) || 'Письмо отправлено'
     })
   } catch (error) {
     $q.notify({
       color: 'negative',
       icon: 'report_problem',
-      message: error.response?.data?.message || 'Не удалось отправить письмо. Попробуйте ещё раз.'
+      message: extractApiMessage(error, 'Не удалось отправить письмо. Попробуйте ещё раз.')
     })
   } finally {
     loading.value = false

@@ -59,6 +59,7 @@ import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from 'stores/auth-store';
+import { extractApiMessage } from 'src/utils/api-message.js';
 
 const $q = useQuasar();
 const form = ref({
@@ -69,14 +70,6 @@ const form = ref({
 const loading = ref(false);
 const router = useRouter();
 const authStore = useAuthStore();
-
-function errorMessage(error, fallback) {
-  if (error.response?.data?.errors) {
-    return Object.values(error.response.data.errors).flat().join(' ');
-  }
-
-  return error.response?.data?.message || fallback;
-}
 
 const handleLogin = async () => {
   loading.value = true;
@@ -99,7 +92,7 @@ const handleLogin = async () => {
     router.push('/');
 
   } catch (error) {
-    const message = errorMessage(error, 'Не удалось войти. Проверьте email и пароль.');
+    const message = extractApiMessage(error, 'Не удалось войти. Проверьте email и пароль.');
 
     console.error('Login Error:', {
       message,

@@ -85,6 +85,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth-store'
+import { extractApiMessage, translateMessage } from 'src/utils/api-message.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -117,7 +118,7 @@ async function handleSubmit() {
     $q.notify({
       color: 'positive',
       icon: 'check',
-      message: data?.message || 'Пароль обновлён — войдите с новым паролем'
+      message: translateMessage(data?.message) || 'Пароль обновлён — войдите с новым паролем'
     })
 
     router.push('/login')
@@ -132,9 +133,7 @@ async function handleSubmit() {
     $q.notify({
       color: 'negative',
       icon: 'report_problem',
-      message: errors
-        ? Object.values(errors).flat().join(' ')
-        : error.response?.data?.message || 'Не удалось сменить пароль. Попробуйте ещё раз.'
+      message: extractApiMessage(error, 'Не удалось сменить пароль. Попробуйте ещё раз.')
     })
   } finally {
     loading.value = false

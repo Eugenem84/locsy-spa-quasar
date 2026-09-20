@@ -82,6 +82,7 @@ import { useQuasar } from 'quasar';
 import { useLocationStore } from "stores/location";
 import { useCityStore } from "stores/city";
 import { useCategoryStore } from "stores/category";
+import { translateErrors } from "src/utils/api-message.js";
 //import { error } from '@quasar/app-vite/lib/utils/logger.js'
 
 const props = defineProps({
@@ -176,7 +177,7 @@ async function submitForm() {
         color: 'info',
         message: 'Локация успешно создана и будет опубликована после модерации.',
         icon: 'info',
-        position: 'center',
+        position: 'top',
         timeout: 0,
         offset: [0, 50],
         actions: [{ label: 'OK', color: 'white' }]
@@ -186,7 +187,7 @@ async function submitForm() {
         color: 'positive',
         icon: 'check',
         message: 'Локация создана! Фотографии появятся после проверки модератором.',
-        position: 'center',
+        position: 'top',
         timeout: 4000,
       });
       // Локация уже опубликована, обновляем список
@@ -197,7 +198,7 @@ async function submitForm() {
         message: 'Локация успешно создана!',
         icon: 'check',
         timeout: 3000,
-        position: 'center',
+        position: 'top',
       });
       // Если модерация не требуется, обновляем список локаций
       await locationStore.fetchLocationsForList(cityStore.selectedCity.id);
@@ -207,7 +208,7 @@ async function submitForm() {
 
   } catch (error) {
     if (error.response && error.response.status === 422) {
-      errors.value = error.response.data.errors;
+      errors.value = translateErrors(error.response.data.errors);
     } else {
       $q.notify({
         color: 'negative',

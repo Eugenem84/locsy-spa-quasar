@@ -193,6 +193,7 @@ import { useQuasar } from 'quasar'
 import { useCityStore } from 'stores/city'
 import { useAuthStore } from 'stores/auth-store'
 import { WORK_TYPES } from 'src/constants/photographer.js'
+import { extractApiMessage } from 'src/utils/api-message.js'
 
 const $q = useQuasar()
 const router = useRouter()
@@ -226,11 +227,7 @@ onMounted(() => {
 })
 
 function extractError(error) {
-  const data = error?.response?.data
-  if (data?.errors) {
-    return Object.values(data.errors).flat().join(' ')
-  }
-  return data?.message || 'Не удалось зарегистрироваться. Попробуйте ещё раз.'
+  return extractApiMessage(error, 'Не удалось зарегистрироваться. Попробуйте ещё раз.')
 }
 
 async function handleRegister() {

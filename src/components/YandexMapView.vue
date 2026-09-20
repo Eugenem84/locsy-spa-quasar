@@ -226,7 +226,7 @@ function showPickingNotification() {
     message: 'Выберите место на карте для создания новой локации.',
     color: 'primary',
     icon: 'place',
-    position: 'bottom',
+    position: 'top',
     timeout: 0,
     actions: [
       { label: 'Отмена', color: 'white', handler: () => cancelPickingMode() }

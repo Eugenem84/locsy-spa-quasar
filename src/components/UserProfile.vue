@@ -261,6 +261,7 @@ import { useQuasar } from 'quasar'
 import { useAuthStore } from 'stores/auth-store'
 import { useCityStore } from 'stores/city'
 import { WORK_TYPES, locationStatusMeta, photoStatusMeta } from 'src/constants/photographer.js'
+import { extractApiMessage } from 'src/utils/api-message.js'
 
 defineEmits(['close'])
 
@@ -363,13 +364,10 @@ async function savePhotographer() {
     editingPhotographer.value = false
     $q.notify({ color: 'positive', icon: 'check', message: 'Профиль фотографа сохранён' })
   } catch (error) {
-    const data = error?.response?.data
     $q.notify({
       color: 'negative',
       icon: 'report_problem',
-      message: data?.errors
-        ? Object.values(data.errors).flat().join(' ')
-        : data?.message || 'Не удалось сохранить профиль'
+      message: extractApiMessage(error, 'Не удалось сохранить профиль')
     })
   } finally {
     savingPhotographer.value = false

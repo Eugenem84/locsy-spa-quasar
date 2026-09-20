@@ -110,7 +110,14 @@ export default defineConfig((/* ctx */) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
     framework: {
-      config: {},
+      config: {
+        // Все уведомления (Notify/$q.notify) показываем сверху экрана.
+        // По умолчанию Quasar ставит их снизу — здесь это глобальный дефолт,
+        // отдельные вызовы могут переопределить position при необходимости.
+        notify: {
+          position: 'top'
+        }
+      },
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack

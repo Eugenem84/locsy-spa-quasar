@@ -56,6 +56,7 @@ import { ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth-store'
+import { extractApiMessage, translateMessage } from 'src/utils/api-message.js'
 
 const $q = useQuasar()
 const authStore = useAuthStore()
@@ -64,15 +65,6 @@ const email = ref('')
 const loading = ref(false)
 const sent = ref(false)
 const cooldown = ref(0)
-
-function errorMessage(error, fallback) {
-  const errors = error.response?.data?.errors
-  if (errors) {
-    return Object.values(errors).flat().join(' ')
-  }
-
-  return error.response?.data?.message || fallback
-}
 
 /**
  * Повторную отправку ограничиваем на клиенте: на бэкенде запросы лимитированы
@@ -102,13 +94,13 @@ async function handleSubmit() {
     $q.notify({
       color: 'positive',
       icon: 'mark_email_read',
-      message: data?.message || 'Письмо отправлено'
+      message: translateMessage(data?.message) || 'Письмо отправлено'
     })
   } catch (error) {
     $q.notify({
       color: 'negative',
       icon: 'report_problem',
-      message: errorMessage(error, 'Не удалось отправить письмо. Попробуйте ещё раз.')
+      message: extractApiMessage(error, 'Не удалось отправить письмо. Попробуйте ещё раз.')
     })
   } finally {
     loading.value = false

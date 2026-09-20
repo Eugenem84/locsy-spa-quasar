@@ -66,6 +66,7 @@
 import { ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
+import { extractApiMessage } from 'src/utils/api-message.js'
 
 const props = defineProps({
   locationId: {
@@ -127,10 +128,7 @@ async function upload() {
     emit('uploaded')
     emit('close')
   } catch (error) {
-    const responseData = error?.response?.data
-    const message = responseData?.errors
-      ? Object.values(responseData.errors).flat().join(' ')
-      : responseData?.message || 'Не удалось загрузить фотографии'
+    const message = extractApiMessage(error, 'Не удалось загрузить фотографии')
 
     $q.notify({ color: 'negative', icon: 'report_problem', message })
   } finally {
