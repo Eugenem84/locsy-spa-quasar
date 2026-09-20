@@ -90,7 +90,7 @@
               </q-item>
               <q-item clickable @click="profileModalOpen = true">
                 <q-item-section avatar><q-icon name="manage_accounts" /></q-item-section>
-                <q-item-section><q-item-label>Профиль и материалы</q-item-label></q-item-section>
+                <q-item-section><q-item-label>Профиль</q-item-label></q-item-section>
               </q-item>
               <q-separator />
               <q-item clickable v-close-popup @click="logout">
@@ -124,6 +124,24 @@
       <router-view />
     </q-page-container>
 
+    <!-- Мелкая ссылка обратной связи в углу: сообщить об ошибке или
+         предложить улучшение. Стоит поверх карты и её панелей. -->
+    <q-btn
+      class="feedback-trigger"
+      flat
+      dense
+      no-caps
+      size="sm"
+      icon="bug_report"
+      label="Сообщить об ошибке"
+      aria-label="Обратная связь: сообщить об ошибке или предложить улучшение"
+      @click="feedbackModalOpen = true"
+    />
+
+    <q-dialog v-model="feedbackModalOpen">
+      <FeedbackDialog @close="feedbackModalOpen = false" />
+    </q-dialog>
+
     <q-dialog v-model="profileModalOpen">
       <UserProfile @close="profileModalOpen = false" />
     </q-dialog>
@@ -137,11 +155,13 @@ import { useCityStore } from 'stores/city.js'
 import { useAuthStore } from 'stores/auth-store'
 import BrandLogo from 'components/BrandLogo.vue'
 import UserProfile from 'components/UserProfile.vue'
+import FeedbackDialog from 'components/FeedbackDialog.vue'
 
 const router = useRouter()
 const cityStore = useCityStore()
 const authStore = useAuthStore()
 const profileModalOpen = ref(false)
+const feedbackModalOpen = ref(false)
 
 function openCreateLocationDialog() {
   router.push({ path: '/', query: { picking: 'true' } })
@@ -221,9 +241,49 @@ watch(() => [authStore.user, cityStore.cities.length], applyUserCity, { immediat
   }
 }
 
+/* Аватар в шапке: оранжевое кольцо вокруг круглого фото.
+   Кольцо рисуем псевдоэлементом, а не через border+padding на .q-avatar:
+   у QAvatar картинка наследует размеры родителя (в quasar.css —
+   `.q-avatar img { height: inherit; width: inherit }`), а глобальный сброс
+   Quasar использует `box-sizing: border-box`. Из-за этого border и padding
+   не растягивали кружок, а уменьшали контентную область, картинка оставалась
+   32px и выезжала из кольца вправо-вниз — фото и кольцо не совпадали.
+   Псевдоэлемент растянут отрицательными top/right/bottom/left, поэтому кольцо
+   всегда концентрично фото и высоту шапки не меняет. */
 .avatar-ring {
+  /* flex: none — иначе в узкой шапке бокс аватара мог сжаться, а картинка нет */
+  flex: none;
+}
+
+.avatar-ring::after {
+  content: '';
+  position: absolute;
+  /* 2px зазор между фото и кольцом + 2px толщина самого кольца */
+  top: -4px;
+  right: -4px;
+  bottom: -4px;
+  left: -4px;
   border: 2px solid #ea580c;
   border-radius: 50%;
-  padding: 2px;
+  pointer-events: none;
+}
+
+/* Ссылка обратной связи: мелкая и ненавязчивая, в правом нижнем углу.
+   z-index выше карты и её оверлеев (у них до 1000), чтобы ссылка всегда
+   была доступна. Правый угол выбран потому, что слева Яндекс.Карты
+   показывают копирайт и масштабную линейку. */
+.feedback-trigger {
+  position: fixed;
+  right: 6px;
+  bottom: 4px;
+  z-index: 2500;
+  font-size: 11px;
+  opacity: 0.55;
+  transition: opacity 0.2s ease;
+}
+
+.feedback-trigger:hover,
+.feedback-trigger:focus {
+  opacity: 1;
 }
 </style>

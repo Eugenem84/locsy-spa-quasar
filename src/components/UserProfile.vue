@@ -38,7 +38,8 @@
       narrow-indicator
     >
       <q-tab name="profile" icon="person" label="Профиль" />
-      <q-tab name="materials" icon="collections" label="Материалы" />
+      <q-tab v-if="isPhotographer" name="locations" icon="place" label="Мои локации" />
+      <q-tab v-if="isPhotographer" name="photos" icon="photo_library" label="Мои фото" />
       <q-tab name="photographer" icon="camera_alt" label="Фотограф" />
     </q-tabs>
 
@@ -88,23 +89,39 @@
           class="full-width"
           @click="logout"
         />
+
+        <q-separator class="q-my-md" />
+
+        <div class="text-subtitle2 text-negative">Удаление аккаунта</div>
+        <div class="text-caption text-grey-7 q-mb-sm">
+          Аккаунт, аватар и все ваши фотографии удаляются безвозвратно.
+        </div>
+        <q-btn
+          outline
+          color="negative"
+          no-caps
+          icon="delete_forever"
+          label="Удалить аккаунт"
+          class="full-width"
+          @click="confirmAccountDeletion"
+        />
       </q-tab-panel>
 
-      <q-tab-panel name="materials">
-        <div v-if="materialsLoading" class="text-center q-pa-lg">
+      <q-tab-panel name="locations">
+        <div v-if="locationsLoading" class="text-center q-pa-lg">
           <q-spinner color="primary" size="2.5em" />
         </div>
 
         <template v-else>
           <div class="row items-center justify-between q-mb-sm">
             <div class="text-subtitle1 text-weight-medium">Мои локации ({{ myLocations.length }})</div>
-            <q-btn flat dense no-caps icon="refresh" label="Обновить" color="primary" @click="loadMaterials" />
+            <q-btn flat dense no-caps icon="refresh" label="Обновить" color="primary" @click="loadMyLocations" />
           </div>
 
-          <div v-if="myLocations.length === 0" class="text-body2 text-grey-7 q-mb-md">
+          <div v-if="myLocations.length === 0" class="text-body2 text-grey-7">
             Вы ещё не добавляли локации. Нажмите «Добавить локацию» в меню на карте.
           </div>
-          <q-list v-else separator class="rounded-borders q-mb-md">
+          <q-list v-else separator class="rounded-borders">
             <q-item
               v-for="location in myLocations"
               :key="location.id"
@@ -131,28 +148,51 @@
               </q-item-section>
             </q-item>
           </q-list>
+        </template>
+      </q-tab-panel>
 
-          <div class="text-subtitle1 text-weight-medium q-mb-sm">
-            Мои фотографии ({{ myPhotos.length }})
+      <q-tab-panel name="photos">
+        <div v-if="photosLoading" class="text-center q-pa-lg">
+          <q-spinner color="primary" size="2.5em" />
+        </div>
+
+        <template v-else>
+          <div class="row items-center justify-between q-mb-sm">
+            <div class="text-subtitle1 text-weight-medium">Мои фото ({{ myPhotos.length }})</div>
+            <q-btn flat dense no-caps icon="refresh" label="Обновить" color="primary" @click="loadMyPhotos" />
           </div>
+
           <div v-if="myPhotos.length === 0" class="text-body2 text-grey-7">
             Загруженные вами фото появятся здесь вместе со статусом проверки.
           </div>
           <div v-else class="photos-grid">
             <div v-for="photo in myPhotos" :key="photo.id" class="photo-cell">
-              <q-img :src="photo.full_url" :ratio="4 / 3" class="rounded-borders">
-                <div class="absolute-bottom row items-center justify-between q-px-xs">
-                  <q-chip
-                    dense
-                    :color="photoStatus(photo.status).color"
-                    text-color="white"
-                    :icon="photoStatus(photo.status).icon"
-                    class="q-ma-none"
-                  >
-                    {{ photoStatus(photo.status).label }}
-                  </q-chip>
-                </div>
-              </q-img>
+              <div class="relative-position">
+                <q-img :src="photo.full_url">
+                  <div class="absolute-bottom row items-center justify-between q-px-xs">
+                    <q-chip
+                      dense
+                      :color="photoStatus(photo.status).color"
+                      text-color="white"
+                      :icon="photoStatus(photo.status).icon"
+                      class="q-ma-none"
+                    >
+                      {{ photoStatus(photo.status).label }}
+                    </q-chip>
+                  </div>
+                </q-img>
+                <q-btn
+                  round
+                  dense
+                  push
+                  size="sm"
+                  icon="delete"
+                  color="negative"
+                  class="absolute-top-right q-ma-xs"
+                  aria-label="Удалить фотографию"
+                  @click="askDeletePhoto(photo)"
+                />
+              </div>
               <div class="text-caption text-grey-7 ellipsis q-mt-xs">
                 {{ photo.location?.name || 'Без локации' }}
               </div>
@@ -263,7 +303,7 @@ import { useCityStore } from 'stores/city'
 import { WORK_TYPES, locationStatusMeta, photoStatusMeta } from 'src/constants/photographer.js'
 import { extractApiMessage } from 'src/utils/api-message.js'
 
-defineEmits(['close'])
+const emit = defineEmits(['close'])
 
 const $q = useQuasar()
 const router = useRouter()
@@ -280,7 +320,8 @@ const avatarFile = ref(null)
 const avatarLoading = ref(false)
 const selectedCity = ref(null)
 
-const materialsLoading = ref(false)
+const locationsLoading = ref(false)
+const photosLoading = ref(false)
 const myLocations = ref([])
 const myPhotos = ref([])
 
@@ -305,7 +346,8 @@ onMounted(() => {
 })
 
 watch(tab, (value) => {
-  if (value === 'materials') loadMaterials()
+  if (value === 'locations') loadMyLocations()
+  if (value === 'photos') loadMyPhotos()
 })
 
 function fillPhotographerForm() {
@@ -331,24 +373,35 @@ async function initSelectedCity() {
   selectedCity.value = cityStore.cities.find((c) => c.id === cityId) || null
 }
 
-async function loadMaterials() {
-  materialsLoading.value = true
+async function loadMyLocations() {
+  locationsLoading.value = true
   try {
-    const [locations, photos] = await Promise.all([
-      authStore.fetchMyLocations(),
-      authStore.fetchMyPhotos()
-    ])
-    myLocations.value = locations || []
-    myPhotos.value = photos || []
+    myLocations.value = (await authStore.fetchMyLocations()) || []
   } catch (error) {
-    console.error('Failed to load user materials:', error)
+    console.error('Failed to load user locations:', error)
     $q.notify({
       color: 'negative',
       icon: 'report_problem',
-      message: 'Не удалось загрузить ваши материалы'
+      message: 'Не удалось загрузить ваши локации'
     })
   } finally {
-    materialsLoading.value = false
+    locationsLoading.value = false
+  }
+}
+
+async function loadMyPhotos() {
+  photosLoading.value = true
+  try {
+    myPhotos.value = (await authStore.fetchMyPhotos()) || []
+  } catch (error) {
+    console.error('Failed to load user photos:', error)
+    $q.notify({
+      color: 'negative',
+      icon: 'report_problem',
+      message: 'Не удалось загрузить ваши фото'
+    })
+  } finally {
+    photosLoading.value = false
   }
 }
 
@@ -402,6 +455,68 @@ async function logout() {
   router.push('/')
 }
 
+/**
+ * Удаление своей фотографии из вкладки «Мои фото»: сначала подтверждение,
+ * затем запрос к API и удаление карточки из локального списка.
+ */
+function askDeletePhoto(photo) {
+  $q.dialog({
+    title: 'Удалить фотографию?',
+    message: 'Снимок исчезнет из галереи локации. Действие нельзя отменить.',
+    persistent: true,
+    ok: { label: 'Удалить', color: 'negative', noCaps: true },
+    cancel: { label: 'Отмена', noCaps: true }
+  }).onOk(async () => {
+    try {
+      await authStore.deletePhoto(photo.id)
+      myPhotos.value = myPhotos.value.filter((item) => item.id !== photo.id)
+      $q.notify({ color: 'positive', icon: 'check', message: 'Фотография удалена' })
+    } catch (error) {
+      $q.notify({
+        color: 'negative',
+        icon: 'report_problem',
+        message: extractApiMessage(error, 'Не удалось удалить фотографию')
+      })
+    }
+  })
+}
+
+/**
+ * Удаление аккаунта: подтверждаем текущим паролем. После успеха закрываем
+ * профиль и возвращаемся на карту — пользователь уже разлогинен.
+ */
+function confirmAccountDeletion() {
+  $q.dialog({
+    title: 'Удаление аккаунта',
+    message:
+      'Аккаунт, аватар и все ваши фотографии будут удалены безвозвратно. ' +
+      'Введите пароль, чтобы подтвердить.',
+    prompt: {
+      model: '',
+      type: 'password',
+      label: 'Текущий пароль',
+      outlined: true,
+      isValid: (value) => Boolean(value)
+    },
+    persistent: true,
+    ok: { label: 'Удалить аккаунт', color: 'negative', noCaps: true },
+    cancel: { label: 'Отмена', noCaps: true }
+  }).onOk(async (password) => {
+    try {
+      await authStore.deleteAccount(password)
+      emit('close')
+      $q.notify({ color: 'positive', icon: 'check', message: 'Аккаунт удалён' })
+      router.push('/')
+    } catch (error) {
+      $q.notify({
+        color: 'negative',
+        icon: 'report_problem',
+        message: extractApiMessage(error, 'Не удалось удалить аккаунт')
+      })
+    }
+  })
+}
+
 function goToLocation(id) {
   router.push({ name: 'Location', params: { id } })
 }
@@ -423,6 +538,7 @@ function openMyPage() {
 .photos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  align-items: start;
   gap: 12px;
 }
 

@@ -99,10 +99,10 @@ async function removeFromFavorites(location) {
             Нет фото
           </div>
 
+          <!-- Без принудительного ratio: q-img использует пропорции фото. -->
           <q-img
             v-else
             :src="location.photos[0].full_url"
-            :ratio="4/3"
             class="location-card-image"
           >
             <q-badge

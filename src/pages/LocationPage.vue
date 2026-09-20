@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from 'boot/axios.js'
 import { useAuthStore } from 'stores/auth-store'
 import PhotoUploader from 'components/PhotoUploader.vue' // Import the new component
 import { useQuasar } from 'quasar'
+import { shareLink } from 'src/utils/share.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,7 +33,12 @@ const canDelete = computed(() => {
 });
 
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeydown);
   await fetchLocationData();
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
 })
 
 async function fetchLocationData() {
@@ -84,6 +90,30 @@ function openGallery(index) {
   fullscreen.value = true;
 }
 
+/**
+ * Листание фото в полноэкранном просмотре с клавиатуры:
+ * ← / → переключают снимки по кругу, Esc закрывает просмотр.
+ */
+function handleKeydown(event) {
+  if (!fullscreen.value) return;
+
+  if (event.key === 'Escape') {
+    fullscreen.value = false;
+    return;
+  }
+
+  const total = photoGallery.value.length;
+  if (total === 0) return;
+
+  if (event.key === 'ArrowRight') {
+    event.preventDefault();
+    slide.value = (slide.value + 1) % total;
+  } else if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    slide.value = (slide.value - 1 + total) % total;
+  }
+}
+
 function addPhoto() {
   showPhotoUploaderDialog.value = true; // Open the dialog
 }
@@ -104,7 +134,7 @@ function deletePhoto() {
   }).onOk(async () => {
     const photo = photoGallery.value[slide.value];
     try {
-      await api.delete(`/api/photos/${photo.id}`);
+      await authStore.deletePhoto(photo.id);
       fullscreen.value = false;
       await fetchLocationData();
       $q.notify({
@@ -129,6 +159,39 @@ function goToPhotographerProfile(userId) {
 function goBack() {
   router.back()
 }
+
+/**
+ * Переход на общую карту с фокусом на этой локации.
+ * YandexMapView читает query-параметр ?location=<id>, центрируется на месте
+ * с приближением и подсвечивает его маркер.
+ */
+function showOnMap() {
+  if (!location.value?.id) return
+  router.push({ path: '/', query: { location: location.value.id } })
+}
+
+/**
+ * Делится ссылкой на локацию: на мобильных открывается системное меню
+ * «Поделиться», на десктопе ссылка копируется в буфер обмена.
+ */
+async function shareLocation() {
+  if (!location.value) return
+
+  try {
+    const result = await shareLink({
+      title: location.value.name,
+      text: `Фотолокация «${location.value.name}» на getlocsy`,
+      url: window.location.href
+    })
+
+    if (result === 'copied') {
+      $q.notify({ color: 'positive', icon: 'link', message: 'Ссылка скопирована' })
+    }
+  } catch (error) {
+    console.error('Share error:', error)
+    $q.notify({ color: 'warning', icon: 'link_off', message: 'Не удалось поделиться ссылкой' })
+  }
+}
 </script>
 
 <template>
@@ -139,7 +202,8 @@ function goBack() {
 
     <q-page-sticky position="top-right" :offset="[18, 18]" style="z-index: 10">
       <div class="row q-gutter-sm">
-        <q-btn round dense push :icon="isFavorite ? 'favorite' : 'favorite_border'" @click="toggleFavorite" color="white" text-color="accent"/>
+        <q-btn round dense push icon="share" @click="shareLocation" color="white" text-color="primary" aria-label="Поделиться локацией"/>
+        <q-btn round dense push :icon="isFavorite ? 'favorite' : 'favorite_border'" @click="toggleFavorite" color="white" text-color="accent" aria-label="В избранное"/>
         <q-btn-dropdown
           v-if="authStore.isLoggedIn"
           round dense push
@@ -182,6 +246,27 @@ function goBack() {
             >
               {{ category.name }}
             </q-chip>
+          </div>
+
+          <!-- Ссылка на общую карту: открывает это место с приближением и подсветкой маркера -->
+          <div class="row q-gutter-sm q-mt-md">
+            <q-btn
+              outline
+              no-caps
+              color="primary"
+              icon="map"
+              label="Показать на карте"
+              @click="showOnMap"
+            />
+            <!-- «Поделиться»: на мобильных — системное меню, на десктопе — копирование ссылки -->
+            <q-btn
+              outline
+              no-caps
+              color="primary"
+              icon="share"
+              label="Поделиться"
+              @click="shareLocation"
+            />
           </div>
         </q-card-section>
       </q-card>
@@ -242,7 +327,8 @@ function goBack() {
               class="photo-card"
               @click="openGallery(index)"
             >
-              <q-img :src="photo.full_url" :ratio="4 / 3" spinner-color="grey-5">
+              <!-- Без принудительного ratio: q-img использует пропорции фото. -->
+              <q-img :src="photo.full_url" spinner-color="grey-5">
                 <div class="photo-hover row flex-center">
                   <q-icon name="zoom_in" size="28px" />
                 </div>
@@ -287,7 +373,7 @@ function goBack() {
           v-for="(photo, index) in photoGallery"
           :key="photo.id"
           :name="index"
-          class="flex flex-center no-padding"
+          class="fullscreen-slide flex flex-center"
         >
           <q-img
             :src="photo.full_url"
@@ -315,8 +401,13 @@ function goBack() {
             style="z-index: 20;"
           >
             <q-btn
-              push round dense
+              round
+              push
+              size="lg"
               icon="close"
+              color="white"
+              text-color="black"
+              class="fullscreen-close"
               @click="fullscreen = false"
             />
           </q-carousel-control>
@@ -369,13 +460,13 @@ function goBack() {
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  align-items: start;
   gap: 12px;
 }
 
+/* Фото показываем целиком: без обрезки углов (скругления/overflow). */
 .photo-card {
   position: relative;
-  border-radius: 12px;
-  overflow: hidden;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -384,6 +475,17 @@ function goBack() {
 .photo-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+/* Полноэкранный просмотр: небольшой отступ вокруг фото,
+   чтобы снимок не прилипал к верхнему краю окна. */
+.fullscreen-slide {
+  padding: 24px 16px 20px;
+}
+
+/* Крупная и контрастная кнопка закрытия поверх фото. */
+.fullscreen-close {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
 
 /* Подсказка «открыть фото» при наведении (на тач-устройствах скрыта) */

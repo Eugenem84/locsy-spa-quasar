@@ -173,6 +173,34 @@ export const useAuthStore = defineStore('auth', () => {
     return data;
   }
 
+  /**
+   * Удаление своей фотографии. Бэкенд разрешает удалять только свои снимки,
+   * чужой запрос вернёт 403.
+   */
+  async function deletePhoto(photoId) {
+    try {
+      await api.delete(`/api/photos/${photoId}`);
+    } catch (error) {
+      logApiError('Failed to delete photo', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Удаление аккаунта. Подтверждается текущим паролем; бэкенд удаляет
+   * аватар, фотографии и токены. После успеха сбрасываем пользователя
+   * и токен на клиенте.
+   */
+  async function deleteAccount(password) {
+    try {
+      await api.delete('/api/user', { data: { password } });
+    } catch (error) {
+      logApiError('Failed to delete account', error);
+      throw error;
+    }
+    clearUser();
+  }
+
   // При инициализации хранилища, пытаемся загрузить токен из localStorage
   // и установить его в заголовки axios
   const initialToken = localStorage.getItem('access_token');
@@ -199,5 +227,7 @@ export const useAuthStore = defineStore('auth', () => {
     updatePhotographerProfile,
     fetchMyLocations,
     fetchMyPhotos,
+    deletePhoto,
+    deleteAccount,
   };
 });

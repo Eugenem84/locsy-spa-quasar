@@ -49,53 +49,6 @@
         </q-card-section>
       </q-card>
 
-      <!-- Карта мест, где снимал фотограф -->
-      <q-card flat bordered class="q-mb-md">
-        <q-card-section>
-          <div class="row items-center justify-between">
-            <div class="text-h6">Где снимает</div>
-            <q-badge color="primary">{{ shootingSpots.length }} мест</q-badge>
-          </div>
-          <div class="text-caption text-grey-7 q-mb-sm">
-            Нажмите на маркер, чтобы открыть локацию со всеми фото
-          </div>
-        </q-card-section>
-
-        <YandexMap
-          v-if="shootingSpots.length > 0"
-          height="380px"
-          width="100%"
-          :settings="{
-            location: { center: mapCenter, zoom: mapZoom },
-            showScaleInCopyrights: false
-          }"
-        >
-          <YandexMapDefaultSchemeLayer />
-          <YandexMapDefaultFeaturesLayer>
-            <YandexMapMarker
-              v-for="spot in shootingSpots"
-              :key="spot.id"
-              :settings="{ coordinates: [spot.longitude, spot.latitude] }"
-              @click.stop="goToLocation(spot.id)"
-            >
-              <div class="map-pin">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#F97316">
-                  <path
-                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"
-                  />
-                </svg>
-                <div class="map-pin-tooltip">{{ spot.name }}</div>
-              </div>
-            </YandexMapMarker>
-          </YandexMapDefaultFeaturesLayer>
-        </YandexMap>
-
-        <q-card-section v-else class="text-grey-7 text-body2">
-          Пока нет согласованных фотографий с геометками — карта появится, как только
-          модератор одобрит работы.
-        </q-card-section>
-      </q-card>
-
       <!-- Портфолио -->
       <q-card flat bordered class="q-mb-md">
         <q-card-section>
@@ -109,7 +62,8 @@
               class="photo-card"
               @click="openGallery(index)"
             >
-              <q-img :src="photo.full_url" :ratio="4 / 3" spinner-color="grey-5" />
+              <!-- Без принудительного ratio: q-img использует пропорции фото. -->
+              <q-img :src="photo.full_url" spinner-color="grey-5" />
               <div v-if="photo.location" class="photo-caption">
                 <q-icon name="place" size="14px" /> {{ photo.location.name }}
               </div>
@@ -173,8 +127,8 @@
           color="primary"
           no-caps
           icon="share"
-          label="Скопировать ссылку на мою страницу"
-          @click="copyProfileLink"
+          label="Поделиться страницей"
+          @click="shareProfileLink"
         />
       </div>
 
@@ -194,7 +148,7 @@
             v-for="(photo, index) in photoGallery"
             :key="photo.id"
             :name="index"
-            class="flex flex-center no-padding"
+            class="fullscreen-slide flex flex-center"
           >
             <q-img
               :src="photo.full_url"
@@ -220,7 +174,16 @@
               class="text-white"
               style="z-index: 20"
             >
-              <q-btn push round dense icon="close" @click="fullscreen = false" />
+              <q-btn
+                round
+                push
+                size="lg"
+                icon="close"
+                color="white"
+                text-color="black"
+                class="fullscreen-close"
+                @click="fullscreen = false"
+              />
             </q-carousel-control>
             <q-carousel-control
               v-if="canDelete"
@@ -251,18 +214,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { api } from 'boot/axios.js'
 import { useAuthStore } from 'stores/auth-store'
 import { formatCityName } from 'src/utils/city-name.js'
-import {
-  YandexMap,
-  YandexMapDefaultSchemeLayer,
-  YandexMapDefaultFeaturesLayer,
-  YandexMapMarker
-} from 'vue-yandex-maps'
+import { shareLink } from 'src/utils/share.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -279,12 +237,6 @@ const fullscreen = ref(false)
 const photoGallery = computed(() => photographer.value?.photos || [])
 const shootingSpots = computed(() => photographer.value?.shooting_spots || [])
 const photosCount = computed(() => photographer.value?.photos_count ?? photoGallery.value.length)
-
-const mapCenter = computed(() => {
-  const first = shootingSpots.value[0]
-  return first ? [first.longitude, first.latitude] : [37.618423, 55.751244]
-})
-const mapZoom = computed(() => (shootingSpots.value.length > 1 ? 9 : 12))
 
 const hasContacts = computed(() =>
   Boolean(
@@ -306,7 +258,38 @@ const canDelete = computed(() => {
   return photoGallery.value[slide.value].user_id === authStore.user.id
 })
 
-onMounted(fetchPhotographerData)
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+  fetchPhotographerData()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
+
+/**
+ * Листание фото в полноэкранном просмотре с клавиатуры:
+ * ← / → переключают снимки по кругу, Esc закрывает просмотр.
+ */
+function handleKeydown(event) {
+  if (!fullscreen.value) return
+
+  if (event.key === 'Escape') {
+    fullscreen.value = false
+    return
+  }
+
+  const total = photoGallery.value.length
+  if (total === 0) return
+
+  if (event.key === 'ArrowRight') {
+    event.preventDefault()
+    slide.value = (slide.value + 1) % total
+  } else if (event.key === 'ArrowLeft') {
+    event.preventDefault()
+    slide.value = (slide.value - 1 + total) % total
+  }
+}
 
 async function fetchPhotographerData() {
   loading.value = true
@@ -340,13 +323,26 @@ function goBack() {
   router.back()
 }
 
-async function copyProfileLink() {
+/**
+ * Делится ссылкой на свою страницу фотографа: на мобильных откроется системное
+ * меню «Поделиться», на десктопе ссылка скопируется в буфер обмена.
+ */
+async function shareProfileLink() {
+  if (!photographer.value) return
+
   try {
-    await navigator.clipboard.writeText(window.location.href)
-    $q.notify({ color: 'positive', icon: 'link', message: 'Ссылка скопирована' })
+    const result = await shareLink({
+      title: photographer.value.display_name,
+      text: `Профиль фотографа ${photographer.value.display_name} на getlocsy`,
+      url: window.location.href
+    })
+
+    if (result === 'copied') {
+      $q.notify({ color: 'positive', icon: 'link', message: 'Ссылка скопирована' })
+    }
   } catch (error) {
-    console.error('Clipboard error:', error)
-    $q.notify({ color: 'warning', message: 'Не удалось скопировать ссылку' })
+    console.error('Share error:', error)
+    $q.notify({ color: 'warning', icon: 'link_off', message: 'Не удалось поделиться ссылкой' })
   }
 }
 
@@ -361,7 +357,7 @@ function deletePhoto() {
   }).onOk(async () => {
     const photo = photoGallery.value[slide.value]
     try {
-      await api.delete(`/api/photos/${photo.id}`)
+      await authStore.deletePhoto(photo.id)
       fullscreen.value = false
       await fetchPhotographerData()
       $q.notify({ color: 'positive', message: 'Фотография успешно удалена' })
@@ -391,13 +387,13 @@ function deletePhoto() {
 .photo-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  align-items: start;
   gap: 16px;
 }
 
+/* Фото показываем целиком: без обрезки углов (скругления/overflow). */
 .photo-card {
   position: relative;
-  border-radius: 12px;
-  overflow: hidden;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease;
@@ -414,39 +410,15 @@ function deletePhoto() {
   background: #fff;
 }
 
-.map-pin {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 36px;
-  height: 36px;
-  transform: translate(-18px, -36px);
-  cursor: pointer;
+/* Полноэкранный просмотр: небольшой отступ вокруг фото,
+   чтобы снимок не прилипал к верхнему краю окна. */
+.fullscreen-slide {
+  padding: 24px 16px 20px;
 }
 
-.map-pin svg {
-  width: 100%;
-  height: 100%;
-}
-
-.map-pin-tooltip {
-  position: absolute;
-  top: -26px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fff;
-  padding: 4px 8px;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  white-space: nowrap;
-  font-size: 12px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  pointer-events: none;
-}
-
-.map-pin:hover .map-pin-tooltip {
-  opacity: 1;
+/* Крупная и контрастная кнопка закрытия поверх фото. */
+.fullscreen-close {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
 
 .location-link {

@@ -27,7 +27,7 @@
           <div class="row q-gutter-md q-pa-md" v-if="scope.files.length > 0">
             <div v-for="file in scope.files" :key="file.__key" style="width: 100px">
               <div class="relative-position">
-                <q-img :src="file.__img.src" :ratio="1" class="rounded-borders" />
+                <q-img :src="file.__img.src" />
                 <q-btn
                   size="sm"
                   flat

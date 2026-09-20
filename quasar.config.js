@@ -104,7 +104,11 @@ export default defineConfig((/* ctx */) => {
         // поэтому Laravel формирует ссылки на /storage/... тем же origin'ом,
         // с которого пришёл запрос, и они попадают обратно в этот прокси.
         '/api': { target: 'http://localhost' },
-        '/sanctum': { target: 'http://localhost' }
+        '/sanctum': { target: 'http://localhost' },
+        // Аватары/фото локаций Laravel отдаёт из public/storage. Без этого
+        // правила картинки при открытии dev-сервера (:9000) перехватывает
+        // SPA-фолбэк и в шапке/профиле вместо аватара пусто.
+        '/storage': { target: 'http://localhost' }
       }
     },
 

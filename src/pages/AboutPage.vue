@@ -77,21 +77,6 @@
           </q-card>
         </div>
       </div>
-      <h2 class="text-h5 text-weight-bold q-mt-xl q-mb-md text-center">Как это сделано</h2>
-      <div class="row q-col-gutter-sm justify-center">
-        <div v-for="tech in techStack" :key="tech.title" class="col-12 col-sm-6 col-md-3">
-          <q-card flat bordered class="full-height tech-card">
-            <q-card-section class="q-pa-sm">
-              <div class="row items-center no-wrap">
-                <q-icon :name="tech.icon" size="20px" color="primary" class="q-mr-sm" />
-                <div class="text-subtitle2 text-weight-medium">{{ tech.title }}</div>
-              </div>
-              <div class="text-caption text-grey-7 q-mt-xs">{{ tech.text }}</div>
-            </q-card-section>
-          </q-card>
-        </div>
-      </div>
-
       <div class="text-center q-mt-xl q-mb-xl">
         <q-btn
           color="primary"
@@ -131,7 +116,7 @@ const audiences = [
   {
     icon: 'favorite',
     title: 'Клиентам фотографов',
-    text: 'Смотрите, где и как снимает автор, сравнивайте портфолио и связывайтесь напрямую.'
+    text: 'Находите локации для ваших мероприятий. Смотрите, где и как снимает автор, сравнивайте портфолио и связывайтесь напрямую.'
   }
 ]
 
@@ -142,12 +127,6 @@ const steps = [
   { title: 'Сохраните и вернитесь', text: 'Добавьте место в избранное и откройте его, когда соберётесь снимать.' }
 ]
 
-const techStack = [
-  { icon: 'map', title: 'Яндекс.Карты', text: 'Карта, маркеры и выбор точки для новых локаций' },
-  { icon: 'bolt', title: 'Quasar + Vue 3', text: 'SPA с адаптивным интерфейсом' },
-  { icon: 'dns', title: 'Laravel API', text: 'REST API и авторизация Sanctum' },
-  { icon: 'shield', title: 'Sanctum + Docker', text: 'Сессии, CSRF-защита и контейнерный деплой' }
-]
 </script>
 
 <style scoped>
@@ -178,11 +157,6 @@ const techStack = [
 .audience-card,
 .step-card {
   border-radius: 14px;
-}
-
-/* Блок «Как это сделано» — вспомогательный, поэтому компактный */
-.tech-card {
-  border-radius: 12px;
 }
 
 .feature-list {

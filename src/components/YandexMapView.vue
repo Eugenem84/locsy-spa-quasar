@@ -25,6 +25,30 @@
     <YandexMapDefaultFeaturesLayer />
   </YandexMap>
 
+  <!-- Плашка выделенной локации: карта открыта по ссылке на конкретное место.
+       Кнопка сбрасывает фокус и возвращает карту к центру города. -->
+  <div v-if="focusedLocation && !modalOpen" class="focused-location-wrapper">
+    <q-card flat class="focused-location-card">
+      <q-card-section class="row items-center no-wrap q-py-sm q-px-md">
+        <q-icon name="place" color="primary" size="22px" class="q-mr-sm" />
+        <div class="col ellipsis">
+          <div class="text-caption text-grey-7">Выделенная локация</div>
+          <div class="text-body2 text-weight-medium ellipsis">{{ focusedLocation.name }}</div>
+        </div>
+        <q-btn
+          flat
+          dense
+          no-caps
+          color="primary"
+          icon="close"
+          label="Сбросить"
+          class="q-ml-sm"
+          @click="clearLocationFocus()"
+        />
+      </q-card-section>
+    </q-card>
+  </div>
+
   <!-- Location Detail Modal -->
   <div class="location-bottom-sheet-wrapper">
     <q-card v-if="modalOpen"
@@ -47,10 +71,12 @@
         >
           <div class="row no-wrap">
             <div v-for="photo in selectedLocation?.photos" :key="photo.id" class="q-mr-md">
-              <q-img
+              <!-- Фото показываем целиком: высота фиксирована, ширина — по пропорциям. -->
+              <img
                 :src="photo.full_url"
-                style="width: 300px; height: 200px; border-radius: 10px;"
-                fit="cover"
+                :alt="selectedLocation?.name"
+                class="location-thumb"
+                loading="lazy"
               />
             </div>
           </div>
@@ -122,6 +148,15 @@ const favorites = ref([]);
 // Маркеры, созданные вручную через ymaps3: id локации -> { marker, element }.
 const mapMarkers = new Map();
 
+// Локация, открытая по прямой ссылке (?location=<id>): к ней приближаемся
+// и подсвечиваем её маркер на карте. null — фокуса нет.
+const focusedLocation = ref(null);
+// Приближение, с которым показываем локацию из ссылки.
+const FOCUS_ZOOM = 16;
+// Сброс кликом по карте снимает выделение, не возвращая вид к центру города.
+// Флаг доносит это намерение до watcher route.query.location после смены адреса.
+let keepMapPositionOnClear = false;
+
 
 const isPickingMode = computed(() => route.query.picking === 'true');
 
@@ -176,6 +211,9 @@ async function initializeMap() {
   mapInitialized = true;
 
   await fetchFavorites();
+  // Если карту открыли по ссылке ?location=<id>, сначала центрируемся на локации,
+  // чтобы её маркер точно попал в область запроса видимых локаций.
+  await applyFocusFromQuery();
   await doFetchLocations();
   syncMarkers();
 
@@ -193,6 +231,95 @@ async function initializeMap() {
 // v-model сразу после new ymaps3.YMap(...). Этот момент и есть готовность карты.
 watch(mapInstance, (map) => {
   if (map) initializeMap();
+});
+
+/**
+ * Центрирование карты на локации из query-параметра ?location=<id>.
+ *
+ * Так работает ссылка «Показать на карте» со страницы локации: карта
+ * открывается на нужном месте с приближением, а маркер локации подсвечивается.
+ * Координаты берём из API, поэтому ссылку можно открыть и перезагрузить.
+ *
+ * @returns {Promise<boolean>} true, если фокус был установлен.
+ */
+async function applyFocusFromQuery() {
+  const map = mapInstance.value;
+  const id = Number(route.query.location);
+  if (!map || !Number.isFinite(id) || id <= 0) return false;
+
+  // Уже сфокусированы на этой локации — повторно карту не двигаем.
+  if (String(focusedLocation.value?.id) === String(id)) return false;
+
+  try {
+    const { data } = await api.get(`/api/location/${id}`);
+    const longitude = Number(data.longitude);
+    const latitude = Number(data.latitude);
+    if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return false;
+
+    focusedLocation.value = { id: data.id, name: data.name };
+    // duration: 0 — без анимации, чтобы bounds обновились сразу и попали в запрос локаций.
+    await map.setLocation({ center: [longitude, latitude], zoom: FOCUS_ZOOM, duration: 0 });
+    return true;
+  } catch (error) {
+    console.error('Failed to focus location from query:', error);
+    return false;
+  }
+}
+
+/**
+ * Сброс фокуса: снимаем подсветку маркера и перезапрашиваем локации.
+ *
+ * @param {{ recenter?: boolean }} options
+ *   recenter=true — вернуть карту к центру выбранного города (кнопка «Сбросить»);
+ *   recenter=false — оставить текущий вид (клик по пустому месту карты).
+ */
+async function resetLocationFocus({ recenter = true } = {}) {
+  if (!focusedLocation.value) return;
+
+  focusedLocation.value = null;
+
+  const map = mapInstance.value;
+  const coords = cityStore.selectedCity?.coords;
+  if (recenter && map && coords?.length === 2) {
+    await map.setLocation({ center: [coords[1], coords[0]], zoom: 12, duration: 0 });
+  }
+
+  await doFetchLocations();
+}
+
+/**
+ * Сброс выделения: убираем ?location=<id> из адреса.
+ * Дальше watcher на route.query.location снимет подсветку маркера.
+ *
+ * @param {{ recenter?: boolean }} options recenter=false (клик по карте)
+ *   оставляет вид на месте, recenter=true возвращает карту к городу.
+ */
+function clearLocationFocus({ recenter = true } = {}) {
+  if (route.query.location === undefined) {
+    resetLocationFocus({ recenter });
+    return;
+  }
+
+  // Запоминаем намерение до смены адреса: watcher сработает уже после replace.
+  keepMapPositionOnClear = !recenter;
+
+  const query = { ...route.query };
+  delete query.location;
+  router.replace({ path: '/', query });
+}
+
+// Ссылку вида /?location=<id> можно открыть и переключить без перезагрузки
+// страницы (например, вернувшись со страницы локации на карту).
+watch(() => route.query.location, async (value) => {
+  if (value) {
+    if (await applyFocusFromQuery()) {
+      await doFetchLocations();
+    }
+  } else {
+    const recenter = !keepMapPositionOnClear;
+    keepMapPositionOnClear = false;
+    await resetLocationFocus({ recenter });
+  }
 });
 
 // Список локаций обновился (первая загрузка или смена города) — перерисовываем маркеры.
@@ -252,7 +379,15 @@ function handleEscKey(event) {
  * @param {{ coordinates: [number, number] }} event Координаты клика: [долгота, широта].
  */
 function handleMapClick(object, event) {
-  if (!isPickingMode.value) return;
+  if (!isPickingMode.value) {
+    // object !== undefined — клик попал в маркер: его обрабатывает сам маркер
+    // (см. createMarkerElement), выделение при этом не сбрасываем.
+    if (object || !focusedLocation.value) return;
+
+    // Клик по пустому месту карты сбрасывает выделение, но не двигает карту.
+    clearLocationFocus({ recenter: false });
+    return;
+  }
 
   if (pickingNotification.value) {
     pickingNotification.value();
@@ -297,6 +432,13 @@ watch(() => authStore.isLoggedIn, (isLoggedIn) => {
 
 watch(selectedLocation, (newVal) => {
   modalOpen.value = !!newVal;
+
+  // Клик по маркеру выделяет его, пока открыта карточка локации: обновляем вид
+  // маркеров, чтобы подсветка встала на выбранную локацию и снялась с прежней.
+  mapMarkers.forEach(({ element }, id) => {
+    const location = locations.value.find((item) => item.id === id);
+    if (location) applyMarkerAppearance(location, element, false);
+  });
 });
 
 async function fetchAddress(lat, lon) {
@@ -338,6 +480,8 @@ function goToLocation() {
 
 const defaultMarkerColor = '#1861b1';
 const favoriteMarkerColor = '#F97316';
+// Цвет маркера локации, открытой по прямой ссылке (?location=<id>).
+const focusedMarkerColor = '#e11d48';
 
 function getMarkerColor(location) {
   return favorites.value.includes(location.id) ? favoriteMarkerColor : defaultMarkerColor;
@@ -348,16 +492,33 @@ const MARKER_ICON_PATH =
   'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z';
 
 /**
- * Внешний вид маркера: размер зависит от наведения, цвет — от «избранного».
+ * Внешний вид маркера: размер зависит от выделения и наведения, цвет — от «избранного».
+ *
+ * Выделенным считается маркер локации, открытой в карточке (клик по маркеру),
+ * а также локации из ссылки «Показать на карте» (?location=<id>).
  */
 function applyMarkerAppearance(location, element, hovered) {
-  const size = hovered ? 48 : 36;
+  const isFocused = String(location.id) === String(focusedLocation.value?.id);
+  // Маркер выделяем, только пока открыта карточка локации: если её закрыли,
+  // подсветка снимается (значение в сторе при этом может остаться прежним).
+  const isSelected =
+    modalOpen.value && String(location.id) === String(selectedLocation.value?.id);
+  const isHighlighted = isFocused || isSelected;
+
+  const size = isHighlighted ? 52 : hovered ? 48 : 36;
   element.style.width = `${size}px`;
   element.style.height = `${size}px`;
   element.style.transform = `translate(-${size / 2}px, -${size}px)`;
 
   const icon = element.querySelector('svg');
-  if (icon) icon.setAttribute('fill', getMarkerColor(location));
+  if (icon) icon.setAttribute('fill', isHighlighted ? focusedMarkerColor : getMarkerColor(location));
+
+  // Подсветка выбранного/фокусного маркера: увеличенный пин, пульсация
+  // и постоянная подсказка с названием.
+  element.classList.toggle('is-focused', isFocused);
+  element.classList.toggle('is-selected', isSelected);
+  const tooltip = element.querySelector('.tooltip');
+  if (tooltip) tooltip.classList.toggle('is-visible', isHighlighted || hovered);
 }
 
 /**
@@ -425,6 +586,10 @@ function syncMarkers() {
 
 
 watch(() => cityStore.selectedCity, (newCity) => {
+  // Пока открыта ссылка на конкретную локацию (?location=<id>), смена города
+  // не должна сбивать приближение — пользователь смотрит именно это место.
+  if (focusedLocation.value) return;
+
   // setLocation есть у объекта YMap (ymaps3), а не у компонента карты.
   if (newCity?.coords?.length === 2 && mapInstance.value) {
     mapInstance.value.setLocation({
@@ -455,6 +620,14 @@ watch(() => locationStore.selectedCategoryIds, () => {
   pointer-events: none;
 }
 
+/* Миниатюра в карточке локации: без обрезки и скругления углов. */
+.location-thumb {
+  height: 200px;
+  width: auto;
+  max-width: none;
+  display: block;
+}
+
 .location-bottom-sheet {
   pointer-events: all;
   width: 95%;
@@ -466,6 +639,24 @@ watch(() => locationStore.selectedCategoryIds, () => {
   z-index: 999;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
   position: relative;
+}
+
+/* Плашка выделенной локации (ссылка ?location=<id>): подсказка о фокусе
+   и кнопка сброса. Скрывается, когда открыта карточка локации. */
+.focused-location-wrapper {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 998;
+  width: min(92%, 420px);
+  pointer-events: none;
+}
+
+.focused-location-card {
+  pointer-events: all;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 </style>
@@ -504,6 +695,34 @@ watch(() => locationStore.selectedCategoryIds, () => {
 }
 
 .custom-marker:hover .tooltip {
+    opacity: 1;
+}
+
+/* Маркер локации из ссылки «Показать на карте» (?location=<id>) и маркер,
+   выбранный кликом (открыта карточка локации): пульсирующий ореол у основания
+   пина и всегда видимая подсказка с названием. */
+.custom-marker.is-focused::after,
+.custom-marker.is-selected::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 16px;
+    height: 16px;
+    margin: 0 0 -8px -8px;
+    border-radius: 50%;
+    background: rgba(225, 29, 72, 0.45);
+    animation: focused-marker-pulse 1.6s ease-out infinite;
+    pointer-events: none;
+}
+
+@keyframes focused-marker-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.55); }
+    70%  { box-shadow: 0 0 0 26px rgba(225, 29, 72, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+}
+
+.custom-marker .tooltip.is-visible {
     opacity: 1;
 }
 </style>

@@ -132,14 +132,16 @@ async function toggleFavorite(location) {
           </div>
 
           <q-scroll-area v-else horizontal style="height: 160px; width: 100%;" @click="selectLocation(location)" class="cursor-pointer">
-            <div class="row no-wrap q-gutter-sm q-px-md">
-              <q-img
+            <div class="row no-wrap items-center q-gutter-x-sm q-px-md" style="height: 100%;">
+              <!-- Миниатюры задаём по высоте, а ширину считает браузер:
+                   так фото сохраняет свои пропорции и не обрезается по краям. -->
+              <img
                 v-for="photo in location.photos"
                 :key="photo.id"
                 :src="photo.full_url"
-                class="rounded-borders"
-                spinner-color="grey-5"
-                style="width: 250px; height: 150px;"
+                :alt="location.name"
+                class="location-thumb"
+                loading="lazy"
               />
             </div>
           </q-scroll-area>
@@ -180,5 +182,15 @@ async function toggleFavorite(location) {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Миниатюра без обрезки: высота фиксирована, ширина — по пропорциям фото. */
+.location-thumb {
+  height: 150px;
+  width: auto;
+  max-width: none;
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 </style>
