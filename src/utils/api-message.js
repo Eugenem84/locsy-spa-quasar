@@ -34,10 +34,18 @@ const EXACT_MESSAGES = {
   'Your password has been reset.': 'Пароль обновлён.',
   'Password reset successfully.': 'Пароль обновлён.',
   'Logged out successfully.': 'Вы вышли из аккаунта.',
+  'Logged in successfully': 'Вы вошли в аккаунт.',
+  'User registered successfully': 'Аккаунт создан.',
+  'User city updated successfully': 'Город обновлён.',
+  'Avatar updated successfully': 'Аватар обновлён.',
+  'An unexpected error occurred during login. Please try again later.':
+    'Не удалось войти из-за технической ошибки. Попробуйте позже.',
 
   // Общие ошибки
   'The given data was invalid.': 'Проверьте правильность заполнения полей.',
   'Not Found': 'Данные не найдены.',
+  'Location not found': 'Локация не найдена.',
+  'Unauthorized': 'Недостаточно прав для этого действия.',
   'Too Many Attempts.': 'Слишком много попыток. Попробуйте позже.',
   'Too many requests.': 'Слишком много запросов. Попробуйте позже.',
   'CSRF token mismatch.': 'Сессия устарела. Обновите страницу и попробуйте снова.',
